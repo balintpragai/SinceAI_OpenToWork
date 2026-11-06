@@ -54,7 +54,8 @@ Legitimate oddities are never raised: credit notes (movement 122), `uom = TO` ve
 | **Correct** | `duplicate_record` (drop the later row), `unit_error`, `decimal_shift`, `currency_error`, `pcf_unit_error`, `coordinate_swap`, `wrong_gas_code` (when the system history shows the right gas), `certificate_mismatch` (the registry is authoritative), `pcf_stale_period` (fall back to the material default factor), `total_mismatch` (recompute from components) |
 | **Estimate** | `missing_record` and `meter_spike` (seasonal profile method), `missing_leg` (see below) |
 | **Correct (method)** | `soil_misreport`: raised where organic share ≥ 30 % and the survey says "Mineral soil"; emissions come from the organic share for every farm anyway (ADR 0003) |
-| **Flag only** | `outlier_implausible`, `material_mismatch`, `area_mismatch`, `mode_mislabel` |
+| **Correct** (changed during build, see Comments) | `material_mismatch` (material taken from the ERP text), `mode_mislabel` (label mapped to the survey code) |
+| **Flag only** | `outlier_implausible`, `area_mismatch` |
 
 **Seasonal profile method** (meter gaps and spikes):
 
@@ -160,3 +161,23 @@ These are open to change based on dev-key results or later constraints:
 - **Azurite as the lakehouse container.** Alternatives are a shared Docker volume or MinIO. Not yet certain.
 
 ## Comments
+
+### 2026-11-07: build items 1-3 done
+
+Built: Raw → S1 → S2 → S3 → S4 → Gold, record-level emission line items with the reference check, A1/A2 exports, and the self-check. See [pipeline/README.md](../../pipeline/README.md). 20 unit tests pass. Self-check: A1 95.8 (2023–24), A2 97.2 (2023) and 90.7 (2024); the reference check passes for 2021–2025.
+
+Deviations from the spec, decided during the build:
+- **`material_mismatch` and `mode_mislabel` are corrected, not flagged.** The ERP `material_text` names the right material unambiguously, and the commuting labels map one-to-one ('Car', 'henkilöauto', 'auto' → car; 'linja-auto' → bus). Both change category 1 and category 7 numbers, so leaving them uncorrected would bias A2.
+- **Second currency rule (ERP-CUR-02).** Spend lines (uom EUR) from EUR suppliers can carry a SEK amount. They are detected at 7.5–25× the material's median amount.
+- **Expected organic share for emissions** (ADR 0003 amendment): parcels mapped as clay with ≤ 10 % clay count as organic with p = 0.42, calibrated on the dev inventories. Detection still uses the soil map only.
+- **The meter seasonal profile uses the median over complete years.** The mean let one year's spike distort the profile and missed two dev spikes.
+
+Not built yet: item 4 (index; needs a Gemini API key for `gemini-embedding-001`) and item 5 (Docker + Azurite).
+
+### 2026-11-07: build items 4-5 done
+
+- **Index (item 4):** `gold_doc_chunks` and `gold_index_manifest`, 147 chunks, split on headings, each with a `[file > section]` citation prefix. Embedding with `gemini-embedding-001` (768-d, normalised, RETRIEVAL_DOCUMENT; content-hash cache) runs when `GEMINI_API_KEY` is set. **Not yet run against the real API: no key was available.** The request shape and caching are covered by unit tests with a fake transport. Indexed in addition to the spec: our ADRs and the generated table catalog.
+- **Docker (item 5):** `Dockerfile` (pipeline), `docker-compose.yml` (lakehouse = Azurite, pipeline; agent and dashboard stubbed), `.env.example`. The storage layer (`pipeline/storage.py`) writes Delta straight to `az://` and uploads `Files/`. Verified against a local Azurite (Node), with results identical to a local run. **The Docker images themselves were not built: the Docker daemon was not running.** `docker compose config` validates, and every pinned dependency has a Linux wheel for Python 3.13.
+- Review loop verified end to end with simulated dashboard decisions (reject, override, sign_off): A1 135 → 134 rows, the override logged with the reviewer as `proposed_by`, exports moved to `published/`.
+- The 2022 capex gap is ticket [issues/01](issues/01-capex-2022-reconciliation.md).
+- **2026-11-07, Docker verified:** `docker compose up -d lakehouse` plus `docker compose run --rm --build pipeline` (the README commands, run verbatim) build the image and run the pipeline against the Azurite container in about 25 s. Scores are identical to a local run, the reference check passes, and 25/25 tests pass inside the container. A second run reads the previous run's tables and appends a Delta version tagged with run_id and git commit. The host reads the same tables through `localhost:10010`.

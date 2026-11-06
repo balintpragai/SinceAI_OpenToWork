@@ -1,0 +1,10 @@
+.git
+.tmp
+.venv
+.scratch
+.claude
+lakehouse
+.lakehouse_staging
+**/__pycache__
+**/*.pyc
+.pytest_cache

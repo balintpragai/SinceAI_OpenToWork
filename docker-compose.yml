@@ -1,0 +1,55 @@
+# Climate & Nature Navigator: one container per job.
+#
+#   docker compose up -d lakehouse                        # Azurite: stands in for the Fabric Lakehouse (OneLake)
+#   GIT_COMMIT=$(git rev-parse --short HEAD) docker compose run --rm --build pipeline
+#
+# The challenge package is mounted read-only from CCN_PACKAGE_DIR (see .env.example).
+# The lakehouse lives in the Azurite blob container "lakehouse": Delta tables under Tables/, files under
+# Files/. Production path: the same layout in a Fabric Lakehouse through OneLake (see pipeline/storage.py).
+
+services:
+  lakehouse:
+    image: mcr.microsoft.com/azure-storage/azurite:latest
+    command: ["azurite-blob", "--blobHost", "0.0.0.0", "--blobPort", "10000", "--location", "/data",
+              "--loose", "--skipApiVersionCheck"]
+    ports:
+      - "${LAKEHOUSE_PORT:-10010}:10000"     # host port is configurable; 10000 is often taken
+    volumes:
+      - lakehouse-data:/data
+    restart: unless-stopped
+
+  pipeline:
+    build:
+      context: .
+      args:
+        GIT_COMMIT: ${GIT_COMMIT:-unknown}
+    depends_on:
+      - lakehouse
+    environment:
+      CCN_LAKEHOUSE: az://lakehouse
+      AZURE_STORAGE_BLOB_ENDPOINT: http://lakehouse:10000/devstoreaccount1
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    volumes:
+      - ${CCN_PACKAGE_DIR:-./.tmp/Apetit_SinceAI2026/APETIT_CLIMATE_NATURE_NAVIGATOR_2026/APETIT_CLIMATE_NATURE_NAVIGATOR_2026}:/package:ro
+    restart: "no"
+
+  # Part 2 and Part 3 attach to the same lakehouse; enable them when their images exist.
+  # agent:
+  #   build: ./agent
+  #   profiles: ["part2"]
+  #   depends_on: [lakehouse]
+  #   environment:
+  #     CCN_LAKEHOUSE: az://lakehouse
+  #     AZURE_STORAGE_BLOB_ENDPOINT: http://lakehouse:10000/devstoreaccount1
+  #     GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+  # dashboard:
+  #   build: ./dashboard
+  #   profiles: ["part3"]
+  #   depends_on: [lakehouse]
+  #   ports: ["8501:8501"]
+  #   environment:
+  #     CCN_LAKEHOUSE: az://lakehouse
+  #     AZURE_STORAGE_BLOB_ENDPOINT: http://lakehouse:10000/devstoreaccount1
+
+volumes:
+  lakehouse-data:
