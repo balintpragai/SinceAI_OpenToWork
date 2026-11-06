@@ -29,3 +29,17 @@ These rules apply to every file in this project.
 - If you read PDF files doublecheck with the user its contents.
 - Before you give information about something you found in the PDF file, always tell the user what you know.
 - If you are unsure about some specifications ask for the formula from the user.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live as local markdown files under `.scratch/<feature>/`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Uses the five default triage labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`), recorded as a `Status:` line in each issue file. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
