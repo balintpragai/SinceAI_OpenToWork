@@ -21,7 +21,7 @@ complience assistence
 ## Business Impact (95 - 120s; Total 25s)
 manhours freed
 0 integration cost
-Executive summeries
+Executive summeries - reduce to target review cycle counts
 complience 
 
 # Demo video, section matches
