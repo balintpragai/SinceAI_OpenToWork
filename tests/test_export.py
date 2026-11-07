@@ -68,3 +68,14 @@ def test_missing_answer_raises(store):
         export.find_answer(TID, "nope")
     with pytest.raises(KeyError):
         export.find_answer("b" * 32, "m1")
+
+
+def test_audit_rows_link_back_to_their_chat_answer(store):
+    st = review.stamp("Auditor A", "approved", "ans")
+    store["messages"][1]["review"] = st
+    review.save_conv(store)
+    review.log_decision("Auditor A", "chat", "", {"question": "Scope 1 in 2025?"}, "approved", "ans", "", st["ts"])
+    review.log_decision("Auditor A", "sheet", "E01", {"question": "q"}, "approved", "x")
+    sheet, chat = review.audit_rows()  # newest first
+    assert (chat["thread_id"], chat["answer_id"], chat["question"]) == (TID, "m1", "Scope 1 in 2025?")
+    assert sheet["thread_id"] == "" and sheet["question_id"] == "E01"

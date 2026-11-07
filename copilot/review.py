@@ -3,7 +3,7 @@ import csv
 import os
 import re
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pandas as pd
 
@@ -30,11 +30,12 @@ def now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
-def log_decision(reviewer, source, qid, res, decision, final_answer, final_evidence=""):
-    """Append one row to the audit log (header created if missing)."""
+def log_decision(reviewer, source, qid, res, decision, final_answer, final_evidence="", ts=None):
+    """Append one row to the audit log (header created if missing). ts = the decision stamp's time, so the row can be
+    linked back to its answer (audit_rows)."""
     OUT.mkdir(exist_ok=True)
     new = not AUDIT.exists() or AUDIT.stat().st_size == 0
-    row = [now(), reviewer, source, qid or "", res.get("question", ""), decision, final_answer, final_evidence or "",
+    row = [ts or now(), reviewer, source, qid or "", res.get("question", ""), decision, final_answer, final_evidence or "",
            res.get("model", ""), json.dumps(res.get("citations", [])),
            json.dumps(res.get("trace", []), separators=(",", ":"), default=str)]
     with AUDIT.open("a", newline="", encoding="utf-8") as f:
@@ -44,11 +45,32 @@ def log_decision(reviewer, source, qid, res, decision, final_answer, final_evide
         w.writerow(row)
 
 
+def _decided_answers() -> dict[tuple[str, str], tuple[str, str]]:
+    """(reviewer, decision time) -> (thread_id, answer_id) for every reviewed chat answer."""
+    out = {}
+    for c in list_convs():
+        for m in (load_conv(c["thread_id"]) or {}).get("messages", []):
+            if r := m.get("review"):
+                out[(r["reviewer"], r["ts"])] = (c["thread_id"], m["id"])
+    return out
+
+
 def audit_rows() -> list[dict]:
+    """Newest first. Chat decisions get thread_id/answer_id, found through their answer's review stamp."""
     if not AUDIT.exists():
         return []
     d = pd.read_csv(AUDIT, dtype=str).fillna("")
-    return d.drop(columns=["trace"], errors="ignore").iloc[::-1].to_dict("records")
+    links = _decided_answers()
+    rows = d.drop(columns=["trace"], errors="ignore").iloc[::-1].to_dict("records")
+    for r in rows:
+        ts, who = r["timestamp_utc"], r["reviewer"]
+        try:  # rows logged before 2026-11-07 took their own time, up to a second after the stamp
+            prev = (datetime.fromisoformat(ts) - timedelta(seconds=1)).isoformat(timespec="seconds")
+        except ValueError:
+            prev = ""
+        hit = None if r["question_id"] else links.get((who, ts)) or links.get((who, prev))
+        r["thread_id"], r["answer_id"] = hit or ("", "")
+    return rows
 
 
 def load_drafts() -> dict:

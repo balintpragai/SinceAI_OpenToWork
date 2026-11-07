@@ -305,7 +305,7 @@ def post_review(body: ReviewIn):
             raise HTTPException(400, "Nothing to approve: the draft has no parsed answer. Edit it or re-run it.")
         st = review.stamp(body.reviewer, body.decision, final, evidence)
         # Audit row first: if logging fails, no decision is stored without its audit trail.
-        review.log_decision(body.reviewer, body.source, body.question_id, result or {}, body.decision, final, evidence)
+        review.log_decision(body.reviewer, body.source, body.question_id, result or {}, body.decision, final, evidence, st["ts"])
         target["review"] = st
         review.save_drafts(store) if body.question_id else review.save_conv(store)
     return st
