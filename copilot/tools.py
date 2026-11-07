@@ -3,6 +3,7 @@ Type hints + docstrings become the Gemini function schemas, so keep them precise
 (No `from __future__ import annotations`: the Gemini SDK needs real type objects.)"""
 
 import ast
+import datetime
 import math
 import operator as op
 
@@ -17,10 +18,31 @@ KEY_COLS = ("record_key", "derived_key", "source_key", "eli_key", "key")
 MAX_CELL = 1500  # characters per cell, so one long text field cannot flood the context or the trace
 
 
+def clean(v, cap: int | None = MAX_CELL):
+    """JSON-safe copy: NaN/NaT/inf -> None (browsers reject NaN), numpy scalars unwrapped, strings capped at `cap`
+    (None = no cap, for the model's own answer text)."""
+    if isinstance(v, dict):
+        return {k: clean(x, cap) for k, x in v.items()}
+    if isinstance(v, (list, tuple)):
+        return [clean(x, cap) for x in v]
+    if isinstance(v, str):
+        return v[:cap] + "..." if cap and len(v) > cap else v
+    if isinstance(v, (pd.Timestamp, datetime.date)):
+        return None if pd.isna(v) else v.isoformat()
+    if hasattr(v, "item") and not hasattr(v, "__len__"):  # numpy scalar
+        v = v.item()
+    if isinstance(v, float) and not math.isfinite(v):
+        return None
+    try:
+        if pd.isna(v):
+            return None
+    except (TypeError, ValueError):
+        pass
+    return v
+
+
 def _records(df: pd.DataFrame, n: int = MAX_ROWS) -> list[dict]:
-    h = df.head(n).astype(object)
-    h = h.map(lambda v: v[:MAX_CELL] + "..." if isinstance(v, str) and len(v) > MAX_CELL else v)
-    return h.where(h.notna(), None).to_dict("records")
+    return clean(df.head(n).to_dict("records"))
 
 
 def _share(part: float, whole: float) -> float | None:

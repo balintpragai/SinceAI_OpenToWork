@@ -9,7 +9,7 @@ import typing
 from openai import APIConnectionError, APIStatusError, OpenAI
 
 from . import tools
-from .agent import Copilot, check_citations, system_prompt
+from .agent import Copilot, package, system_prompt
 
 BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://api.featherless.ai/v1")
 MODEL = os.environ.get("FEATHERLESS_MODEL", "Qwen/Qwen3.8-Flash-Next")
@@ -106,7 +106,7 @@ class OpenAICopilot(Copilot):
                     self.messages.append({"role": "tool", "tool_call_id": tc.id, "content": content})
             else:  # step limit: answer from what the tools returned so far
                 self.messages.append({"role": "user", "content": "Stop calling tools. Answer the original question now "
-                                      "from the tool results above, in the answer format, and say what you could not verify."})
+                                      "from the tool results above, in the two-part answer format, and say what you could not verify."})
                 r = self._complete(final=True)
                 text = _THINK.sub("", r.choices[0].message.content or "").strip()
                 del self.messages[-1]
@@ -115,7 +115,7 @@ class OpenAICopilot(Copilot):
             del self.messages[start:]  # keep the conversation consistent for the next turn
             raise
         statuses = {t["result"].get("data_status") for t in self.trace if isinstance(t["result"], dict)} - {None}
-        return {"question": question, "answer": text, "trace": list(self.trace), "citations": check_citations(text),
+        return {**package(question, text, self.trace), "trace": list(self.trace),
                 "data_status": sorted(statuses), "model": self.model, "tokens": usage}
 
 

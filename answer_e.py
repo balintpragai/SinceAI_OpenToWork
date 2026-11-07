@@ -9,7 +9,8 @@ import pandas as pd
 from copilot import data
 
 DRAFTS = data.OUT / "e_drafts.json"
-FMT = ("\n\nEnd your reply with exactly two lines:\nANSWER: {a}\n"
+FMT = ("\n\nWrite the two-part answer as usual. Inside the TECHNICAL part (after the ---TECHNICAL--- line), end your reply "
+       "with exactly two lines:\nANSWER: {a}\n"
        "EVIDENCE: <record keys, table+filter, and [path#Heading] citations, separated by '; '>")
 ANS = {"numeric": "<number only, no units, no thousands separators, '.' as decimal>", "rubric": "<2-4 sentence answer>"}
 
@@ -44,7 +45,7 @@ def main():
              "answer": "", "evidence": "", "full": None, "review": None}
         try:
             d["full"] = cp.ask(q.question + FMT.format(a=ANS[q.kind]), fresh=True)
-            d["answer"], d["evidence"] = parse(d["full"]["answer"])
+            d["answer"], d["evidence"] = parse(d["full"]["raw"])
             print(q.question_id, "->", d["answer"][:80] or "(parse failed)")
         except Exception as e:
             d["error"] = f"{type(e).__name__}: {e}"
