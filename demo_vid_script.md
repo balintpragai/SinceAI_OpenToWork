@@ -22,6 +22,6 @@ complience assistence
 manhours freed
 0 integration cost
 Executive summeries - reduce to target review cycle counts
-complience 
+complience - cycle time reduction
 
 # Demo video, section matches
