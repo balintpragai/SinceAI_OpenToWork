@@ -10,11 +10,13 @@ import queue
 import threading
 import traceback
 import uuid
+from pathlib import Path
 
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from answer_e import ANS, FMT, parse
@@ -178,6 +180,8 @@ def reload():
     data.reset_caches()
     from copilot import gold
     gold.reset()
+    from copilot import data_review
+    data_review.reset()
     _threads.clear()
     return status()
 
@@ -196,6 +200,18 @@ def dashboard(year: int = 2025):
     from copilot import dashboard as dash
     from copilot.tools import clean
     return clean(dash.dashboard(year), cap=None)
+
+
+# Data review: issues traced from source file to footprint, built from the lakehouse Gold tables (copilot/data_review.py).
+@app.get("/api/footprint/{name}")
+def footprint_data(name: str):
+    from copilot import data_review
+    if name not in ("run", "inventory", "issues"):
+        raise HTTPException(404, f"Unknown dataset {name!r}")
+    try:
+        return Response(data_review.payload()[name], media_type="application/json")
+    except LookupError as e:
+        raise HTTPException(404, str(e))
 
 
 # ---- E answer sheet ----------------------------------------------------------------------------
@@ -304,3 +320,9 @@ def audit():
 def export():
     n, total = review.export_submission(review.load_drafts())
     return {"approved": n, "total": total, "path": data.rel(review.SUBMISSION)}
+
+
+# The built web UI (web/dist, e.g. in the Docker image). Mounted last so every /api route above takes precedence.
+_WEB_DIST = Path(__file__).parent / "web" / "dist"
+if _WEB_DIST.is_dir():
+    app.mount("/", StaticFiles(directory=_WEB_DIST, html=True), name="web")

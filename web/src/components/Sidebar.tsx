@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 
-const NAV: [View, string][] = [['dashboard', 'Dashboard'], ['ask', 'Ask'], ['sheet', 'Answer sheet'], ['audit', 'Audit log']]
+const NAV: [View, string][] = [['dashboard', 'Dashboard'], ['review', 'Data review'], ['ask', 'Ask'], ['sheet', 'Answer sheet'], ['audit', 'Audit log']]
 
 export function Sidebar() {
   const { view, setView, status, statusError, reloadOutputs, reloading, reviewer, setReviewer, dark, toggleTheme } = useApp()
