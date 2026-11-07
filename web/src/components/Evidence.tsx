@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuiState } from '@assistant-ui/react'
-import { Check, Play, X } from 'lucide-react'
-import { api, fmtTime, recordKeys, type AskResult, type Stamp } from '@/lib/api'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import { Check, ChevronRight, Play, X } from 'lucide-react'
+import { api, fmtTime, recordKeys, type AskResult, type Source, type Stamp } from '@/lib/api'
 import { useApp } from '@/lib/app'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -136,6 +138,10 @@ export function EvidencePanel() {
   const keys = recordKeys(`${r?.answer ?? s.answer}\n${s.evidence}`)
   const naive = !!r?.data_status?.includes('naive')
   const steps = running ? live!.steps : r?.trace ?? []
+  const sources: Source[] = r?.sources?.length ? r.sources : [
+    ...(r?.citations ?? []).filter((c) => c.valid).map((c) => ({ label: c.citation })),
+    ...keys.map((k) => ({ label: k, file: k })),
+  ]
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -152,11 +158,6 @@ export function EvidencePanel() {
           <p className="mt-1 line-clamp-3 text-[13px] text-muted-foreground">{s.qid && <span className="num mr-1.5">{s.qid}</span>}{s.title}</p>
         </div>
 
-        {naive && (
-          <div role="status" className="border-b border-warn/30 bg-warn-bg px-4 py-2 text-[13px] text-warn">
-            Built on uncleaned data. Numbers may be wrong until the pipeline outputs land.
-          </div>
-        )}
         {live?.error && <p role="alert" className="border-b border-reject/30 bg-reject/10 px-4 py-2 text-[13px] text-reject">{live.error}</p>}
         {s.qid && !r && !running && !live?.error && <p className="px-4 py-3 text-[13px] text-muted-foreground">This question has not been run. Press Run to draft an answer.</p>}
 
@@ -167,46 +168,80 @@ export function EvidencePanel() {
           </Section>
         )}
 
-        {r && (
-          <Section title="Citations">
-            {r.citations.length === 0 ? <p className="text-[13px] text-muted-foreground">No citations in this answer.</p> : (
-              <ul className="space-y-1">
-                {r.citations.map((c, i) => (
-                  <li key={i} className="flex items-start gap-2 text-[13px]">
-                    {c.valid ? <Check size={14} className="mt-0.5 shrink-0 text-ok" aria-label="valid" /> : <X size={14} className="mt-0.5 shrink-0 text-reject" aria-label="invalid" />}
-                    <span className="min-w-0 break-words"><span className="num text-[12px]">{c.citation}</span>{!c.valid && <span className="ml-1.5 text-reject">not found in corpus</span>}</span>
+        {sources.length > 0 && (
+          <Section title="Sources">
+            <ul className="space-y-1.5">
+              {sources.map((x, i) => {
+                const key = recordKeys(`${x.file ?? ''} ${x.detail ?? ''}`)[0]
+                const body = (<>
+                  <span className="block text-[14px]">{x.label}</span>
+                  {(x.file || x.detail) && <span className="num block break-words text-[12px] text-muted-foreground">{[x.file, x.detail].filter(Boolean).join(' · ')}</span>}
+                </>)
+                return (
+                  <li key={i}>
+                    {key
+                      ? <button type="button" onClick={() => openRecord(key)} className="w-full rounded-sm px-1 py-0.5 text-left hover:bg-subtle">{body}</button>
+                      : <div className="px-1 py-0.5">{body}</div>}
                   </li>
-                ))}
-              </ul>
+                )
+              })}
+            </ul>
+          </Section>
+        )}
+
+        {naive && (
+          <div role="status" className="border-b border-warn/30 bg-warn-bg px-4 py-2 text-[13px] text-warn">
+            Built on uncleaned data. Numbers may be wrong until the pipeline outputs land.
+          </div>
+        )}
+        <details className="group border-b border-border px-4 py-3">
+          <summary className="label flex cursor-pointer list-none items-center gap-1 [&::-webkit-details-marker]:hidden">
+            <ChevronRight size={12} className="transition-transform group-open:rotate-90" /> Technical details
+          </summary>
+          <div className="mt-3 space-y-4">
+            {r?.technical && (
+              <div className="md num text-[12.5px]"><ReactMarkdown remarkPlugins={[remarkGfm]}>{r.technical}</ReactMarkdown></div>
             )}
-          </Section>
-        )}
-
-        {keys.length > 0 && (
-          <Section title="Record keys">
-            <div className="flex flex-wrap gap-1.5">
-              {keys.map((k) => (
-                <button key={k} type="button" onClick={() => openRecord(k)}
-                  className="num max-w-full truncate rounded-[4px] border border-border bg-subtle px-1.5 py-0.5 text-[12px] hover:border-primary hover:text-primary">{k}</button>
-              ))}
-            </div>
-          </Section>
-        )}
-
-        {(steps.length > 0 || running) && (
-          <Section title={`Tool trace${steps.length ? ` (${steps.length})` : ''}`}>
-            {steps.map((t, i) => <ToolStep stacked key={t.id} index={i + 1} tool={t.tool} args={t.args} result={t.result} ms={t.ms} />)}
-            {running && steps.length === 0 && <p className="text-[13px] text-muted-foreground">Waiting for the first tool call...</p>}
-          </Section>
-        )}
-
-        {r && (
-          <Section title="Tokens">
-            <p className="num text-[12.5px] text-muted-foreground">
-              prompt {r.tokens.prompt ?? '-'} · cached {r.tokens.cached ?? '-'} · output {r.tokens.output ?? '-'}
-            </p>
-          </Section>
-        )}
+            {r && (
+              <div>
+                <h4 className="label mb-1.5">Citations</h4>
+                {r.citations.length === 0 ? <p className="text-[13px] text-muted-foreground">No citations in this answer.</p> : (
+                  <ul className="space-y-1">
+                    {r.citations.map((c, i) => (
+                      <li key={i} className="flex items-start gap-2 text-[13px]">
+                        {c.valid ? <Check size={14} className="mt-0.5 shrink-0 text-ok" aria-label="valid" /> : <X size={14} className="mt-0.5 shrink-0 text-reject" aria-label="invalid" />}
+                        <span className="min-w-0 break-words"><span className="num text-[12px]">{c.citation}</span>{!c.valid && <span className="ml-1.5 text-reject">not found in corpus</span>}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+            {keys.length > 0 && (
+              <div>
+                <h4 className="label mb-1.5">Record keys</h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {keys.map((k) => (
+                    <button key={k} type="button" onClick={() => openRecord(k)}
+                      className="num max-w-full truncate rounded-[4px] border border-border bg-subtle px-1.5 py-0.5 text-[12px] hover:border-primary hover:text-primary">{k}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {(steps.length > 0 || running) && (
+              <div>
+                <h4 className="label mb-1.5">{`Tool trace${steps.length ? ` (${steps.length})` : ''}`}</h4>
+                {steps.map((t, i) => <ToolStep stacked key={t.id} index={i + 1} tool={t.tool} args={t.args} result={t.result} ms={t.ms} />)}
+                {running && steps.length === 0 && <p className="text-[13px] text-muted-foreground">Waiting for the first tool call...</p>}
+              </div>
+            )}
+            {r && (
+              <p className="num text-[12.5px] text-muted-foreground">
+                prompt {r.tokens?.prompt ?? '-'} · cached {r.tokens?.cached ?? '-'} · output {r.tokens?.output ?? '-'}
+              </p>
+            )}
+          </div>
+        </details>
       </div>
       <ReviewBar s={s} />
     </div>

@@ -1,6 +1,7 @@
 export type Json = unknown
 export type TraceStep = { id: string; tool: string; args: Record<string, unknown>; result?: any; ms?: number }
 export type Citation = { citation: string; valid: boolean }
+export type Source = { label: string; file?: string; detail?: string }
 export type AskResult = {
   question?: string
   answer: string
@@ -13,6 +14,8 @@ export type AskResult = {
   answer_id?: string
   parsed_answer?: string
   parsed_evidence?: string
+  technical?: string
+  sources?: Source[]
 }
 export type Stamp = { status: 'approved' | 'edited' | 'rejected'; reviewer: string; ts: string; final_answer: string; final_evidence: string | null }
 export type Question = {
@@ -113,4 +116,20 @@ export function resultSummary(r: any): { text: string; error: boolean } {
 export const fmtTime = (ts: string) => {
   const d = new Date(ts)
   return isNaN(+d) ? ts : d.toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })
+}
+
+/** Plain-words description of what a running tool is doing. */
+export function statusFor(tool?: string, args?: Record<string, any>): string {
+  const q = JSON.stringify(args ?? {}).toLowerCase()
+  switch (tool) {
+    case 'get_inventory': return 'Checking the emissions inventory…'
+    case 'sql':
+      return q.includes('erp_purchase') ? 'Reading purchase records…' : q.includes('refrigerant') ? 'Reading the refrigerant log…'
+        : q.includes('farm') ? 'Reading farm data…' : /issue|correction/.test(q) ? 'Checking data-quality findings…' : 'Looking through the records…'
+    case 'get_records': return 'Tracing the numbers back to source records…'
+    case 'data_quality': return 'Checking data-quality findings…'
+    case 'search_docs': return 'Looking up the methodology and frameworks…'
+    case 'sbti_target': case 'calculate': return 'Doing the maths…'
+    default: return 'Thinking…'
+  }
 }
