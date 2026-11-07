@@ -5,11 +5,10 @@ import {
 } from '@assistant-ui/react'
 import { MarkdownTextPrimitive } from '@assistant-ui/react-markdown'
 import remarkGfm from 'remark-gfm'
-import { ArrowUp, Square } from 'lucide-react'
-import { api, friendlyError, stream, type AskResult, type Conversation, type StoredMessage } from '@/lib/api'
+import { ArrowUp, Loader2, Square } from 'lucide-react'
+import { api, friendlyError, stream, type AskResult, statusFor, type Conversation, type StoredMessage } from '@/lib/api'
 import { lsGet, lsSet, useApp } from '@/lib/app'
 import { Button } from '@/components/ui/button'
-import { ToolCallFallback } from './ToolStep'
 import { cn } from '@/lib/utils'
 
 type Conv = {
@@ -123,7 +122,7 @@ function UserMessage() {
 }
 
 function AssistantMessage() {
-  const { selectedMsgId, setSelectedMsgId, setEvidenceOpen } = useApp()
+  const { selectedMsgId, setSelectedMsgId, setEvidenceOpen, pingEvidence } = useApp()
   const id = useAuiState((s) => s.message.id)
   const final = useAuiState((s) => finalOf(s.message))
   const selected = selectedMsgId === id
@@ -133,17 +132,36 @@ function AssistantMessage() {
         className={cn('rounded-md border border-transparent px-2 py-1.5 -mx-2', selected && 'border-border bg-card/60')}
         onClick={() => { if (final) { setSelectedMsgId(id); setEvidenceOpen(true) } }}
       >
-        <MessagePrimitive.Parts components={{ Text: Markdown, tools: { Fallback: ToolCallFallback } }} />
+        {/* tool-call parts stay in the message data for the Evidence panel; the thread only shows the answer */}
+        <MessagePrimitive.Parts components={{ Text: Markdown, tools: { Fallback: () => null } }} />
+        <AuiIf condition={(s) => s.message.status?.type === 'running'}><StatusLine /></AuiIf>
+        {final && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            Based on {final.trace?.length ?? 0} checks ·{' '}
+            <button type="button" className="rounded-sm underline underline-offset-2 hover:text-foreground"
+              onClick={(e) => { e.stopPropagation(); setSelectedMsgId(id); setEvidenceOpen(true); pingEvidence() }}>See evidence →</button>
+          </p>
+        )}
         <MessagePrimitive.Error>
           <p role="alert" className="mt-1 rounded-md border border-reject/30 bg-reject/10 px-3 py-2 text-[13px] text-reject">
             <ErrorText />
           </p>
         </MessagePrimitive.Error>
-        <AuiIf condition={(s) => s.message.status?.type === 'running' && s.message.content.length === 0}>
-          <p className="text-[13px] text-muted-foreground">Waiting for the first tool call...</p>
-        </AuiIf>
       </div>
     </MessagePrimitive.Root>
+  )
+}
+
+function StatusLine() {
+  const text = useAuiState((s) => {
+    const calls = s.message.content.filter((c) => c.type === 'tool-call') as ToolCallMessagePart[]
+    const cur = [...calls].reverse().find((c) => c.result === undefined) ?? calls[calls.length - 1]
+    return statusFor(cur?.toolName, cur?.args as Record<string, unknown>)
+  })
+  return (
+    <p role="status" className="flex items-center gap-2 text-[13px] text-muted-foreground">
+      <Loader2 size={13} className="animate-spin motion-reduce:animate-none" aria-hidden /> {text}
+    </p>
   )
 }
 
@@ -195,7 +213,7 @@ export function AskView() {
           <AuiIf condition={(s) => s.thread.isEmpty}>
             <div className="pt-10">
               <p className="max-w-lg text-sm text-muted-foreground">
-                Ask about the inventory, a data issue or a framework rule. Every number comes from a tool call you can inspect.
+                Ask about the inventory, a data issue or a framework rule. Every answer links to the evidence behind it.
               </p>
               <div className="mt-4 flex max-w-lg flex-col items-start gap-1.5">
                 {EXAMPLES.map((q) => (
