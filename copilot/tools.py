@@ -228,13 +228,14 @@ def show_chart(chart_id: str, year: int = 2025) -> dict:
     restate every value.
 
     Args:
-        chart_id: one of kpis (headline figures + data trust), scope_split (own operations / energy / supply chain),
-            trend (2021-2025 by group vs previously published), top_categories, top_materials (biggest
-            material x supplier sources), land_use (farming & land-use share), farm_components (contract-farm
-            emissions by cause), crop_intensity (kg CO2e per kg by crop), farm_map (farms by peat soil),
-            corrections (draft report vs cleaned figure, step by step), issues_by_type (data problems found and
-            how they were handled), published_vs_checked, target_path (own operations + energy vs 1.5 C path),
-            levers (reduction options by tonnes saved and cost), carbon_cost (carbon price exposure by scenario).
+        chart_id: one of kpis (headline figures + data status), scope_split (Scope 1/2/3 shares),
+            trend (2021-2025 by scope vs originally published), top_categories (GHG Protocol categories),
+            top_materials (largest material x supplier sources), land_use (agriculture & land-use / FLAG share),
+            corrections (draft report vs validated total, step by step), issues_by_type (data-quality findings and
+            how they were handled), published_vs_checked, target_path (Scope 1+2 vs 1.5 C pathway), levers
+            (reduction measures by abatement and cost), carbon_cost (carbon-price exposure by scenario),
+            farm_summary (contract-farm headline figures), farm_sources (contract-farm emissions by source),
+            farm_concentration (peat-soil farms' share of farm emissions), crop_intensity (kg CO2e per kg by crop).
         year: reporting year 2021-2025 (ignored by trend, published_vs_checked, target_path, levers).
     """
     from . import dashboard

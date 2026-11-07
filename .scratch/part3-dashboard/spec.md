@@ -18,19 +18,30 @@ A visual dashboard for non-technical readers (sustainability managers, executive
 - **One chart registry:** `copilot/dashboard.py` `CHARTS`. Each function takes a year and returns `{id, title, kind, unit, rows, status, sources, note?, trust?, series?}`.
   - `title` is the takeaway, computed from the numbers.
   - `sources` are plain names.
-- **API:** `GET /api/dashboard?year=` returns every chart, grouped into `PAGES`.
+- **API:** `GET /api/dashboard?year=` returns every chart, grouped into `SECTIONS`.
 - **Copilot tool:** `show_chart(chart_id, year)` calls the same functions. The chart travels in the answer's tool trace, and the chat renders it with the same `ChartCard` the dashboard uses, so the numbers always agree.
 - **Totals are market-based** (location-based Scope 2 is dropped to avoid double counting).
 - **Target:** base year 2021 (the first pipeline year), with a 4.2 %/yr linear reduction for Scope 1+2.
 - **Landing page:** the Dashboard is the default view.
 
-## Pages
+## Layout (revised 2026-11-07)
 
-1. **Overview:** kpis (total, vs last year, per tonne sold, items needing review, trust strip), scope_split, trend (with previously published figures).
-2. **What drives it:** top_categories, top_materials (material × supplier), land_use.
-3. **Farm to freezer:** farm_components, crop_intensity, farm_map (farms plotted by location, coloured by peat soil; no map tiles).
-4. **Can we trust it?:** corrections (draft report → fixes → checked figure), issues_by_type, published_vs_checked.
-5. **Getting to target:** target_path, levers (labelled as design estimates), carbon_cost (3 scenarios).
+- **One scrolling page, not tabs.** Executive dashboards are a single page read top to bottom.
+- **Sticky header:** year, draft/published status, and section links that highlight the section in view.
+- **Language:** professional and direct.
+  - GHG Protocol category names.
+  - Scope 1/2/3 with a one-line definition.
+  - Every title states the finding with its figure.
+
+**Sections**, in executive reading order:
+1. **Executive summary:** kpis, scope_split, trend.
+2. **Emission sources:** top_categories, land_use, top_materials.
+3. **Data quality & assurance:** corrections, issues_by_type, published_vs_checked.
+4. **Decarbonisation pathway:** target_path, levers (labelled as design estimates), carbon_cost (3 scenarios).
+5. **Agricultural supply chain:** farm_summary, farm_sources (4 source groups), farm_concentration (peat-soil farms' share of farms vs share of emissions), crop_intensity (with volume delivered).
+   - Replaces the earlier "Farm to freezer" page and its unlabelled farm scatter chart.
+
+**"Ask the copilot"** on any chart starts a new conversation.
 
 ## Findings during the build
 
