@@ -10,11 +10,13 @@ import queue
 import threading
 import traceback
 import uuid
+from pathlib import Path
 
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from answer_e import ANS, FMT, parse
@@ -198,6 +200,20 @@ def dashboard(year: int = 2025):
     return clean(dash.dashboard(year), cap=None)
 
 
+# Data review: the pipeline's dashboard export (pipeline/dashboard_json.py, schema ccn-dashboard/1), read-only.
+FOOTPRINT_DIR = Path(os.environ.get("CCN_DASHBOARD_DATA") or Path(__file__).parent / "dashboard" / "data")
+
+
+@app.get("/api/footprint/{name}")
+def footprint_data(name: str):
+    if name not in ("run", "inventory", "issues"):
+        raise HTTPException(404, f"Unknown dataset {name!r}")
+    f = FOOTPRINT_DIR / f"{name}.json"
+    if not f.is_file():
+        raise HTTPException(404, f"{f} not found. Run `python -m pipeline run` to write the dashboard data.")
+    return FileResponse(f, media_type="application/json")
+
+
 # ---- E answer sheet ----------------------------------------------------------------------------
 
 def _questions() -> pd.DataFrame:
@@ -304,3 +320,9 @@ def audit():
 def export():
     n, total = review.export_submission(review.load_drafts())
     return {"approved": n, "total": total, "path": data.rel(review.SUBMISSION)}
+
+
+# The built web UI (web/dist, e.g. in the Docker image). Mounted last so every /api route above takes precedence.
+_WEB_DIST = Path(__file__).parent / "web" / "dist"
+if _WEB_DIST.is_dir():
+    app.mount("/", StaticFiles(directory=_WEB_DIST, html=True), name="web")
