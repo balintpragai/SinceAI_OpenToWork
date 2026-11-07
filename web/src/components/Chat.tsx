@@ -15,12 +15,13 @@ import { ChartCard, type Chart } from '@/components/charts'
 type Conv = {
   convs: Conversation[]; activeId: string | undefined
   newConversation: () => void; openConversation: (id: string) => Promise<void>
+  askNew: (text: string) => void
 }
 const ConvCtx = createContext<Conv>(null!)
 export const useConversations = () => useContext(ConvCtx)
 export const useNewConversation = () => useContext(ConvCtx).newConversation
 
-type Start = { key: number; id?: string; messages: ThreadMessageLike[] }
+type Start = { key: number; id?: string; messages: ThreadMessageLike[]; pending?: string }
 
 function Runtime({ start, onFinal, children }: { start: Start; onFinal: (id: string) => void; children: ReactNode }) {
   const threadId = useRef<string | undefined>(start.id)
@@ -52,7 +53,18 @@ function Runtime({ start, onFinal, children }: { start: Start; onFinal: (id: str
     },
   }))
   const runtime = useLocalRuntime(adapter, { initialMessages: start.messages })
-  return <AssistantRuntimeProvider runtime={runtime}>{children}</AssistantRuntimeProvider>
+  return <AssistantRuntimeProvider runtime={runtime}><SendPending start={start} />{children}</AssistantRuntimeProvider>
+}
+
+const sent = new Set<number>() // start keys whose pending question was sent (StrictMode mounts effects twice)
+function SendPending({ start }: { start: Start }) {
+  const aui = useAui()
+  useEffect(() => {
+    if (!start.pending || sent.has(start.key)) return
+    sent.add(start.key)
+    aui.thread().append({ role: 'user', content: [{ type: 'text', text: start.pending }] })
+  }, [aui, start])
+  return null
 }
 
 export function ChatProvider({ children }: { children: ReactNode }) {
@@ -83,7 +95,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     } catch { activate(undefined) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-  const newConversation = () => { setSelectedMsgId(null); setStart((s) => ({ key: s.key + 1, messages: [] })); activate(undefined) }
+  const newConversation = (pending?: string) => { setSelectedMsgId(null); setStart((s) => ({ key: s.key + 1, messages: [], pending })); activate(undefined) }
 
   useEffect(() => {
     void refresh()
@@ -93,7 +105,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   const onFinal = useCallback((id: string) => { setActiveId(id); lsSet('nav.thread', id); void refresh() }, [refresh])
   return (
-    <ConvCtx.Provider value={{ convs, activeId, newConversation, openConversation }}>
+    <ConvCtx.Provider value={{ convs, activeId, newConversation: () => newConversation(), openConversation, askNew: newConversation }}>
       <Runtime key={start.key} start={start} onFinal={onFinal}>{children}</Runtime>
     </ConvCtx.Provider>
   )
