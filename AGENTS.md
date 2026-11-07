@@ -30,6 +30,10 @@ These rules apply to every file in this project.
 - Before you give information about something you found in the PDF file, always tell the user what you know.
 - If you are unsure about some specifications ask for the formula from the user.
 
+### 1.5 File naming conventions
+
+-Do not use :, ?, *, ", <, >,| characters in file names, as they are not compatible with all the systems that the team is working with.
+
 ## Agent skills
 
 ### Issue tracker
