@@ -25,3 +25,8 @@ Executive summeries - reduce to target review cycle counts
 complience - cycle time reduction
 
 # Demo video, section matches
+Start with Dashboard, showcase
+Follow up with asking about one of the charts
+describe what you see, everything can be exported
+data review
+
