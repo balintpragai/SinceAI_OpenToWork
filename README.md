@@ -4,6 +4,8 @@
 
 Apetit's sustainability data comes from many places: ERP exports, energy meters, supplier carbon footprints, contract-farm surveys, soil maps and more. People spend hours chasing loose ends and checking which number is true. Croissant collects all of it in one place, cleans it in a way you can trace, and puts it on one dashboard with an AI co-pilot that answers questions and cites its sources.
 
+**Link to the Demo:** https://youtu.be/ba2Bmh2JnSY
+
 ## What it does
 
 | | |
