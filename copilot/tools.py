@@ -222,4 +222,23 @@ def calculate(expression: str) -> dict:
         return {"expression": expression, "error": str(e)}
 
 
-TOOLS = [get_inventory, sql, get_records, data_quality, search_docs, sbti_target, calculate]
+def show_chart(chart_id: str, year: int = 2025) -> dict:
+    """Show one of the dashboard's charts to the user, above your answer. Use it when a picture helps (shares,
+    rankings, trends, targets); at most one per answer. The result holds the chart's numbers: quote them, do not
+    restate every value.
+
+    Args:
+        chart_id: one of kpis (headline figures + data trust), scope_split (own operations / energy / supply chain),
+            trend (2021-2025 by group vs previously published), top_categories, top_materials (biggest
+            material x supplier sources), land_use (farming & land-use share), farm_components (contract-farm
+            emissions by cause), crop_intensity (kg CO2e per kg by crop), farm_map (farms by peat soil),
+            corrections (draft report vs cleaned figure, step by step), issues_by_type (data problems found and
+            how they were handled), published_vs_checked, target_path (own operations + energy vs 1.5 C path),
+            levers (reduction options by tonnes saved and cost), carbon_cost (carbon price exposure by scenario).
+        year: reporting year 2021-2025 (ignored by trend, published_vs_checked, target_path, levers).
+    """
+    from . import dashboard
+    return clean(dashboard.chart(chart_id, year), cap=None)
+
+
+TOOLS = [get_inventory, sql, get_records, data_quality, search_docs, sbti_target, calculate, show_chart]

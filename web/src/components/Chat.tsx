@@ -10,6 +10,7 @@ import { api, friendlyError, stream, type AskResult, statusFor, type Conversatio
 import { lsGet, lsSet, useApp } from '@/lib/app'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { ChartCard, type Chart } from '@/components/charts'
 
 type Conv = {
   convs: Conversation[]; activeId: string | undefined
@@ -133,7 +134,7 @@ function AssistantMessage() {
         onClick={() => { if (final) { setSelectedMsgId(id); setEvidenceOpen(true) } }}
       >
         {/* tool-call parts stay in the message data for the Evidence panel; the thread only shows the answer */}
-        <MessagePrimitive.Parts components={{ Text: Markdown, tools: { Fallback: () => null } }} />
+        <MessagePrimitive.Parts components={{ Text: Markdown, tools: { by_name: { show_chart: ChartPart }, Fallback: () => null } }} />
         <AuiIf condition={(s) => s.message.status?.type === 'running'}><StatusLine /></AuiIf>
         {final && (
           <p className="mt-1 text-xs text-muted-foreground">
@@ -150,6 +151,11 @@ function AssistantMessage() {
       </div>
     </MessagePrimitive.Root>
   )
+}
+
+function ChartPart({ result }: { result?: unknown }) {
+  const c = result as Chart | undefined
+  return c && !c.error ? <div className="my-2" onClick={(e) => e.stopPropagation()}><ChartCard chart={c} /></div> : null
 }
 
 function StatusLine() {
