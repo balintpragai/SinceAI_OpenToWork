@@ -46,7 +46,7 @@ export function FootprintReview() {
     <div className="p-6">
       <h2 className="text-[17px]">Data review</h2>
       <p role="alert" className="mt-2 text-[13px] text-reject">Couldn't load the pipeline output: {err}</p>
-      <p className="mt-1 text-[13px] text-muted-foreground">Run <span className="num">python -m pipeline run</span> to write <span className="num">dashboard/data/</span>, then reload.</p>
+      <p className="mt-1 text-[13px] text-muted-foreground">Run <span className="num">python -m pipeline run</span> to build the lakehouse, then press Reload outputs in the sidebar.</p>
     </div>
   )
   if (!fp) return <p className="p-6 text-[13px] text-muted-foreground">Loading the pipeline output...</p>

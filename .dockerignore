@@ -11,6 +11,5 @@ lakehouse
 env
 **/node_modules
 web/dist
-dashboard/data
 outputs
 **/.DS_Store

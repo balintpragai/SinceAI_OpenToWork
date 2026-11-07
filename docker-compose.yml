@@ -47,12 +47,10 @@ services:
     environment:
       CCN_ROOT: /package
       LAKEHOUSE_DIR: /app/lakehouse
-      CCN_DASHBOARD_DATA: /app/dashboard/data
       COPILOT_FAKE: ${COPILOT_FAKE:-}
     volumes:
       - ${CCN_PACKAGE_DIR:-./.tmp/Apetit_SinceAI2026/APETIT_CLIMATE_NATURE_NAVIGATOR_2026/APETIT_CLIMATE_NATURE_NAVIGATOR_2026}:/package:ro
       - ./lakehouse:/app/lakehouse:ro
-      - ./dashboard/data:/app/dashboard/data:ro
       - web-outputs:/app/outputs
     restart: unless-stopped
 

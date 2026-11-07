@@ -1,5 +1,5 @@
 // Footprint review: data, plain-language wording and the review-decision store.
-// Reads the pipeline's dashboard export (pipeline/dashboard_json.py, schema ccn-dashboard/1) through /api/footprint/*.
+// Reads the lakehouse Gold tables through the backend: /api/footprint/{run|inventory|issues} (copilot/data_review.py).
 import { useCallback, useState } from 'react'
 import { api } from './api'
 import { lsGet, lsSet } from './app'
@@ -41,7 +41,7 @@ export type Footprint = {
 export async function loadFootprint(): Promise<Footprint> {
   const get = async <T,>(n: string) => {
     const e = await api<Envelope<T>>(`/api/footprint/${n}`)
-    if (e.schema !== 'ccn-dashboard/1') throw new Error(`Unexpected schema ${e.schema} in ${n}.json`)
+    if (e.schema !== 'ccn-review/1') throw new Error(`Unexpected schema ${e.schema} in ${n}.json`)
     return e
   }
   const [r, v, i] = await Promise.all([get<RunData>('run'), get<Footprint['inv']>('inventory'), get<Footprint['iss']>('issues')])

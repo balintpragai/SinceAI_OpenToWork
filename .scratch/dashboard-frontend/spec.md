@@ -6,7 +6,7 @@ This describes every visualization and element of the current dashboard (`dashbo
 
 ## 1. Data the page reads
 
-`python -m pipeline run` writes the data to `dashboard/data/` (code: `pipeline/dashboard_json.py`). Every file has the same envelope:
+(Historical: the plain-HTML page read JSON files written by a `pipeline/dashboard_json.py` export, since removed; the web app reads the lakehouse instead, see §6.) Every file has the same envelope:
 
 ```json
 { "schema": "ccn-dashboard/1", "kind": "run|inventory|issues|records", "run": { "run_id", "git_commit", "inputs_sha256", "started", "generated_at" }, "data": { ... } }
@@ -322,7 +322,7 @@ Placeholder when nothing is selected: "Select an issue in the matrix, scatter, b
 
 ## 6. Issue workbench (current layout, supersedes the page order in §3)
 
-**Where it lives now:** the web app's **Data review** view (sidebar, next to Dashboard): `web/src/components/FootprintReview.tsx`, `web/src/components/IssuePanel.tsx` and `web/src/lib/footprint.ts` (data types, plain wording, decision store). Data comes from `GET /api/footprint/{run|inventory|issues}` (server.py, reads `CCN_DASHBOARD_DATA`, default `dashboard/data/`). The reviewer name comes from the sidebar. Decisions stay in the browser (`ccn.decisions`) and download as `review_decisions.json`. The plain-HTML page is stashed (`git stash list`: "Plain-HTML footprint review dashboard").
+**Where it lives now:** the web app's **Data review** view (sidebar, next to Dashboard): `web/src/components/FootprintReview.tsx`, `web/src/components/IssuePanel.tsx` and `web/src/lib/footprint.ts` (data types, plain wording, decision store). Data comes from the lakehouse through the backend: `GET /api/footprint/{run|inventory|issues}` (server.py → `copilot/data_review.py`, built once per pipeline run from Gold and stage tables, envelope schema `ccn-review/1`). "As recorded" figures and per-issue effects are Gold tables written by the pipeline (`pipeline/as_recorded.py`): `gold_emission_line_items_as_recorded`, `gold_inventory_summary_as_recorded`, `gold_issue_effects`. The reviewer name comes from the sidebar. Decisions stay in the browser (`ccn.decisions`) and download as `review_decisions.json`. The plain-HTML page and its JSON export are retired.
 
 One page, no Simple/Expert switch. It uses the triage layout common to data-quality and observability tools: summary metrics, then an impact breakdown, then a filterable issue table, then a detail side panel. The plain-language explanation comes first; the technical drill-down is per issue, inside the side panel. §3's pipeline-wide charts are removed (see item 7).
 

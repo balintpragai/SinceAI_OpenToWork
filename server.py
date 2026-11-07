@@ -15,7 +15,7 @@ from pathlib import Path
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -180,6 +180,8 @@ def reload():
     data.reset_caches()
     from copilot import gold
     gold.reset()
+    from copilot import data_review
+    data_review.reset()
     _threads.clear()
     return status()
 
@@ -200,18 +202,16 @@ def dashboard(year: int = 2025):
     return clean(dash.dashboard(year), cap=None)
 
 
-# Data review: the pipeline's dashboard export (pipeline/dashboard_json.py, schema ccn-dashboard/1), read-only.
-FOOTPRINT_DIR = Path(os.environ.get("CCN_DASHBOARD_DATA") or Path(__file__).parent / "dashboard" / "data")
-
-
+# Data review: issues traced from source file to footprint, built from the lakehouse Gold tables (copilot/data_review.py).
 @app.get("/api/footprint/{name}")
 def footprint_data(name: str):
+    from copilot import data_review
     if name not in ("run", "inventory", "issues"):
         raise HTTPException(404, f"Unknown dataset {name!r}")
-    f = FOOTPRINT_DIR / f"{name}.json"
-    if not f.is_file():
-        raise HTTPException(404, f"{f} not found. Run `python -m pipeline run` to write the dashboard data.")
-    return FileResponse(f, media_type="application/json")
+    try:
+        return Response(data_review.payload()[name], media_type="application/json")
+    except LookupError as e:
+        raise HTTPException(404, str(e))
 
 
 # ---- E answer sheet ----------------------------------------------------------------------------
