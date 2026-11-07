@@ -41,7 +41,8 @@ class _FakeCopilot:
         from copilot.agent import package
         trace = []
         for i, (fn, kw) in enumerate([(tools.get_inventory, {"year": 2024, "scope": "scope1"}),
-                                      (tools.sql, {"query": "SELECT * FROM published_inventory_history WHERE year = 2024"})]):
+                                      (tools.sql, {"query": "SELECT * FROM published_inventory_history WHERE year = 2024"}),
+                                      (tools.show_chart, {"chart_id": "trend"})]):
             self.on_event and self.on_event({"type": "tool_start", "id": f"t{i}", "tool": fn.__name__, "args": kw})
             time.sleep(0.6)
             step = {"id": f"t{i}", "tool": fn.__name__, "args": kw, "result": fn(**kw), "ms": 600}
@@ -188,6 +189,13 @@ def records(key: str):
     if "error" in res:
         raise HTTPException(400, res["error"])
     return res
+
+
+@app.get("/api/dashboard")
+def dashboard(year: int = 2025):
+    from copilot import dashboard as dash
+    from copilot.tools import clean
+    return clean(dash.dashboard(year), cap=None)
 
 
 # ---- E answer sheet ----------------------------------------------------------------------------
