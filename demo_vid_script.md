@@ -2,12 +2,13 @@
 Total duration: 120s
 
 ## Problem definition (15s; Total: 15s)
-Lot of data scattered, need something to collect it
+<!-- Lot of data scattered, need something to collect it
 Accuracy? Estimates? Sources of error?
 Loose ends, no central ground truth / No one source of truth
-Can't See through everything, let alone match it up with regulations
+Can't See through everything, let alone match it up with regulations -->
 
-Distributed operations lead to distributed data. Apetit experiences this first-hand, spending countless manhours on finding loose ends and verifying truth. The time they need to spend format their data into reports robs them of time spent on actually developing more advanced sustainability practices.
+Distributed operations lead to distributed data. Apetit experiences this first-hand, spending countless manhours on finding loose ends and verifying truth.
+This time could be better spent on development of more advanced sustainability practices.
 
 ## Solution (15 - 35s; Total: 20s)
 A 1 dashboard solution!
