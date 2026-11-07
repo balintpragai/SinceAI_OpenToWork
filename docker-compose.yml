@@ -1,4 +1,4 @@
-# Climate & Nature Navigator: one container per job.
+# Croissant (Climate & Nature Navigator challenge): one container per job.
 #
 #   docker compose up -d lakehouse                        # Azurite: stands in for the Fabric Lakehouse (OneLake)
 #   GIT_COMMIT=$(git rev-parse --short HEAD) docker compose run --rm --build pipeline

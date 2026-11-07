@@ -1,4 +1,4 @@
-# Parts 2 + 3: the Navigator web app in one container. The React UI is built in a Node stage and served by the
+# Parts 2 + 3: the Croissant web app in one container. The React UI is built in a Node stage and served by the
 # FastAPI backend (server.py mounts web/dist after its /api routes).
 # Mounted at run time (see docker-compose.yml, service "web"): the challenge package and the lakehouse (read-only),
 # and a volume for outputs/ (drafts, conversations, audit log).

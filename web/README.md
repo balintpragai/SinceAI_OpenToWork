@@ -1,4 +1,4 @@
-# Navigator web UI
+# Croissant web UI
 
 Vite + React + TypeScript, Tailwind v4, shadcn/ui (Base UI), @assistant-ui/react.
 

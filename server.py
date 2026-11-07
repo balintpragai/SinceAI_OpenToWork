@@ -22,7 +22,7 @@ from pydantic import BaseModel
 from answer_e import ANS, FMT, parse
 from copilot import data, review
 
-app = FastAPI(title="Climate & Nature Navigator copilot")
+app = FastAPI(title="Croissant – climate & nature copilot")
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
                    allow_methods=["*"], allow_headers=["*"])
 

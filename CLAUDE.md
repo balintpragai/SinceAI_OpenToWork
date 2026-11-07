@@ -1,4 +1,4 @@
-# Climate & Nature Navigator — Claude notes
+# Croissant (Climate & Nature Navigator) — Claude notes
 
 **Read `AGENTS.md` first. Its data-file rules are mandatory: ask before reading any file, per file.**
 Project plan: `.scratch/part1-pipeline/spec.md` (Part 1 pipeline), `GLOSSARY.md`, `docs/adr/`.

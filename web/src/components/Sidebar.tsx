@@ -15,8 +15,14 @@ export function Sidebar() {
   return (
     <aside className="flex h-full w-[232px] shrink-0 flex-col border-r border-border bg-card">
       <div className="px-4 pt-4 pb-3">
-        <h1 className="text-[17px] leading-tight">Navigator</h1>
-        <p className="mt-0.5 text-xs text-muted-foreground">Apetit × Since AI · synthetic data</p>
+        <h1 className="flex items-center gap-2 text-[18px] font-semibold leading-tight tracking-tight">
+          {/* three layers: the croissant, and Bronze → Silver → Gold */}
+          <svg viewBox="0 0 32 32" aria-hidden className="size-5 text-brand" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round">
+            <path d="M3.5 24a12.5 12.5 0 0 1 25 0" /><path d="M9 24a7 7 0 0 1 14 0" /><path d="M14 24a2 2 0 0 1 4 0" />
+          </svg>
+          croissant
+        </h1>
+        <p className="mt-1 text-xs leading-snug text-muted-foreground">Climate &amp; nature copilot<br />Apetit × Since AI · synthetic data</p>
       </div>
       <nav aria-label="Views" className="flex flex-col">
         {NAV.map(([v, label]) => (

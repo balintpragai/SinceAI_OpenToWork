@@ -16,7 +16,7 @@ from . import data, gold, sources, tools
 MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash")
 FALLBACKS = ["gemini-3.7-flash", "gemini-flash-latest", "gemini-3.5-flash"]  # used on 503/429 overload
 
-RULES = """You are the Climate & Nature Navigator copilot for Apetit's sustainability experts. The data is a
+RULES = """You are Croissant, the climate & nature copilot for Apetit's sustainability experts. The data is a
 SYNTHETIC twin of a Nordic food company (frozen vegetables, rapeseed oil, contract farms in Finland and Sweden).
 Never present results as Apetit's real emissions.
 
