@@ -16,6 +16,7 @@ type Ctx = {
   chatReviews: Record<string, Stamp>; setChatReview: (id: string, s: Stamp) => void
   recordKey: string | null; openRecord: (k: string | null) => void
   evidenceOpen: boolean; setEvidenceOpen: (b: boolean) => void
+  evidencePing: number; pingEvidence: () => void
 }
 const C = createContext<Ctx>(null!)
 export const useApp = () => useContext(C)
@@ -77,12 +78,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const setChatReview = (id: string, s: Stamp) => setChatReviews((m) => ({ ...m, [id]: s }))
   const [recordKey, openRecord] = useState<string | null>(null)
   const [evidenceOpen, setEvidenceOpen] = useState(false)
+  const [evidencePing, setEvidencePing] = useState(0)
+  const pingEvidence = useCallback(() => setEvidencePing((n) => n + 1), [])
 
   const value = useMemo<Ctx>(() => ({
     view, setView, reviewer, setReviewer, dark, toggleTheme, status, reloadOutputs, reloading, statusError,
     questions, questionsError, refreshQuestions, selectedQid, setSelectedQid, run, runQuestion,
-    selectedMsgId, setSelectedMsgId, chatReviews, setChatReview, recordKey, openRecord, evidenceOpen, setEvidenceOpen,
+    selectedMsgId, setSelectedMsgId, chatReviews, setChatReview, recordKey, openRecord, evidenceOpen, setEvidenceOpen, evidencePing, pingEvidence,
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [view, reviewer, dark, status, reloading, statusError, questions, questionsError, selectedQid, run, selectedMsgId, chatReviews, recordKey, evidenceOpen])
+  }), [view, reviewer, dark, status, reloading, statusError, questions, questionsError, selectedQid, run, selectedMsgId, chatReviews, recordKey, evidenceOpen, evidencePing, pingEvidence])
   return <C.Provider value={value}>{children}</C.Provider>
 }

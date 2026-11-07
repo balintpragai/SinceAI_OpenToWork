@@ -122,7 +122,7 @@ function UserMessage() {
 }
 
 function AssistantMessage() {
-  const { selectedMsgId, setSelectedMsgId, setEvidenceOpen } = useApp()
+  const { selectedMsgId, setSelectedMsgId, setEvidenceOpen, pingEvidence } = useApp()
   const id = useAuiState((s) => s.message.id)
   const final = useAuiState((s) => finalOf(s.message))
   const selected = selectedMsgId === id
@@ -139,7 +139,7 @@ function AssistantMessage() {
           <p className="mt-1 text-xs text-muted-foreground">
             Based on {final.trace?.length ?? 0} checks ·{' '}
             <button type="button" className="rounded-sm underline underline-offset-2 hover:text-foreground"
-              onClick={(e) => { e.stopPropagation(); setSelectedMsgId(id); setEvidenceOpen(true) }}>See evidence</button>
+              onClick={(e) => { e.stopPropagation(); setSelectedMsgId(id); setEvidenceOpen(true); pingEvidence() }}>See evidence →</button>
           </p>
         )}
         <MessagePrimitive.Error>

@@ -52,12 +52,21 @@ Hard rules:
 
 Answer format. Your readers are non-technical sustainability managers. Write TWO parts.
 
-PART 1, plain language (this is what the user sees in the chat):
-**<the insight in ONE or at most two SHORT sentences (under 40 words), in bold; put supporting detail in the bullets below, not here: number rounded sensibly, e.g. "about 221,000 t CO₂e" or "89 %", and the year; explain the unit once in plain words, e.g. "t CO₂e = tonnes of carbon dioxide equivalent">**
-**Why it matters:** the so-what, plus one concrete suggested next step.
-**How sure is this:** draft or published, share of estimates and of flagged (uncertain) data, data caveats, in plain words.
-**Sources:** plain source names separated by " · ", taken from SOURCE NAMES, e.g. Purchase records (ERP export) · Methodology guide, section “4. Scope 3”.
-Part 1 must NEVER contain table or column names, SQL, record keys, file paths, tool names, or jargon such as FLAG (say "land-use emissions"), eli, gold, lakehouse, Scope 1/2/3 without a plain-words explanation. Keep Part 1 under about 150 words.
+PART 1, plain language (this is what the user sees in the chat). It must be SHORT and scannable, each block on
+its own paragraph separated by a blank line, about 110 words in total:
+**<headline: the answer in ONE sentence, max 25 words, bold, with the key number rounded (e.g. "about 221,000 t CO₂e", "89 %") and the year>**
+
+- <up to 3 bullets, each one short line with one supporting fact; skip bullets if the headline says it all>
+
+**Why it matters:** one or two short sentences: the so-what and one concrete next step.
+
+**How sure is this:** one short sentence: draft or published, and any important caveat in plain words.
+
+**Sources:** plain source names separated by " · ", from SOURCE NAMES.
+
+Explain a unit only the first time it appears, briefly in brackets, e.g. "t CO₂e (tonnes of CO₂-equivalent)".
+Part 1 must NEVER contain table or column names, SQL, record keys, file paths, tool names, or jargon such as FLAG
+(say "land-use emissions"), eli, gold, lakehouse, Scope 1/2/3 without a plain-words explanation.
 
 Then a line containing exactly
 ---TECHNICAL---
@@ -95,10 +104,19 @@ def check_citations(text: str) -> list[dict]:
 MARKER = "---TECHNICAL---"
 
 
+_SECTION = re.compile(r"\n*(\*\*(?:Why it matters|How sure is this|Sources):\*\*)")
+
+
+def _blocks(text: str) -> str:
+    """Models often separate sections with single newlines, which Markdown merges into one paragraph."""
+    text = _SECTION.sub(r"\n\n\1", text).strip()
+    return re.sub(r"(\*\*)\n(?=[-*] )", r"\1\n\n", text)  # blank line between bold headline and bullets
+
+
 def package(question: str, text: str, trace: list[dict]) -> dict:
     """Split the model text into the plain answer and the technical part; add citations and plain-language sources."""
     answer, _, technical = text.partition(MARKER)
-    answer, technical = answer.strip(), technical.strip()
+    answer, technical = _blocks(answer.strip()), technical.strip()
     return {"question": question, "answer": answer, "technical": technical, "raw": text,
             "sources": sources.build_sources(trace, technical), "citations": check_citations(answer + "\n" + technical)}
 
