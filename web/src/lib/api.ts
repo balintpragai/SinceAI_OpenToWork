@@ -129,6 +129,7 @@ export function statusFor(tool?: string, args?: Record<string, any>): string {
     case 'get_records': return 'Tracing the numbers back to source records…'
     case 'data_quality': return 'Checking data-quality findings…'
     case 'search_docs': return 'Looking up the methodology and frameworks…'
+    case 'show_chart': return 'Drawing a chart…'
     case 'sbti_target': case 'calculate': return 'Doing the maths…'
     default: return 'Thinking…'
   }
