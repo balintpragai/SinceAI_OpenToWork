@@ -59,12 +59,15 @@
   --warn-bg: #fbf1e2;
   --reject: #b3412e;
   --pending: #6b7570;
+  /* chart slots: dataviz reference palette, fixed order (light steps) */
+  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --status-warning: #fab219;
 }
 
 .dark {
   --background: #101513; --card: #171e1b; --foreground: #e3eae6; --muted-foreground: #95a39c;
   --border: #29332e; --subtle: #1e2723; --primary: #5cc29a; --primary-foreground: #0c1410;
   --ok: #55b17d; --warn: #e0a95e; --warn-bg: #2f2618; --reject: #e5806b; --pending: #95a39c;
+  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --status-warning: #fab219;
 }
 
 @layer base {

@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { api, friendlyError, stream, type Question, type Stamp, type Status, type TraceStep } from './api'
 
-export type View = 'ask' | 'sheet' | 'audit'
+export type View = 'dashboard' | 'ask' | 'sheet' | 'audit'
 export type RunState = { qid: string; steps: TraceStep[]; error?: string; done: boolean }
 
 type Ctx = {
@@ -25,7 +25,7 @@ export const lsGet = (k: string) => { try { return localStorage.getItem(k) } cat
 export const lsSet = (k: string, v: string) => { try { localStorage.setItem(k, v) } catch { /* private mode */ } }
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [view, setView] = useState<View>('ask')
+  const [view, setView] = useState<View>('dashboard')
   const [reviewer, setReviewerState] = useState(() => lsGet('nav.reviewer') ?? '')
   const setReviewer = (s: string) => { setReviewerState(s); lsSet('nav.reviewer', s) }
 
