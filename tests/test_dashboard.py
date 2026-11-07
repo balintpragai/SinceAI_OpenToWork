@@ -17,8 +17,8 @@ def _summary_total(year: int) -> float:
 @pytest.mark.parametrize("year", [2023, 2025])
 def test_every_chart_renders_and_is_json(year):
     d = D.dashboard(year)
-    assert set(d["charts"]) == {c for page in D.PAGES.values() for c in page}
-    for c in d["charts"].values():
+    assert set(d["charts"]) == {c for sec in d["sections"] for c in sec["charts"]}
+    for c in [*d["charts"].values(), *(D.chart(k, year) for k in D.CHARTS)]:
         assert "error" not in c and c["title"] and c["kind"], c
     json.dumps(tools.clean(d, cap=None), allow_nan=False)
 
@@ -41,3 +41,10 @@ def test_trust_shares_sum_to_100():
 def test_show_chart_tool_rejects_unknown_id():
     assert "error" in tools.show_chart("nope")
     assert tools.show_chart("levers")["kind"] == "lever_bars"
+
+
+def test_farm_shares_add_up():
+    rows = D.farm_concentration(2025)["rows"]
+    assert all(r["Farms with peat soils"] + r["Farms on mineral soils only"] == pytest.approx(100, abs=0.2) for r in rows)
+    src = D.farm_sources(2025)["rows"]
+    assert sum(r["value"] for r in src) == pytest.approx(D.farm_summary(2025)["rows"][0]["value"], abs=len(src))

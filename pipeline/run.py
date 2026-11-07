@@ -15,6 +15,7 @@ from .canonical import build_canonical
 from .catalog import build_catalog
 from .checks import reference_check, self_check
 from .config import DEV_YEARS, REPO_ROOT, SUBMISSION_YEAR, Config
+from .as_recorded import as_recorded_line_items, issue_effects
 from .correct import empty_review_decisions, stage_s3
 from .emissions import emission_line_items, summarise
 from .exports import a1_export, a1_rows, a2_export, write_csv
@@ -107,6 +108,15 @@ def run(cfg: Config | None = None, log=print) -> dict:
     lh.write("gold", "emission_line_items", eli)
     summary = pd.concat([summarise(eli, y) for y in INVENTORY_YEARS], ignore_index=True)
     lh.write("gold", "inventory_summary", summary)
+
+    log("gold: as recorded (no issue applied) and the effect of each issue")
+    raw = as_recorded_line_items(s1, ctx.boundary, INVENTORY_YEARS, log)
+    if raw is not None:
+        raw["run_id"] = run_id
+        lh.write("gold", "emission_line_items_as_recorded", raw)
+        lh.write("gold", "inventory_summary_as_recorded",
+                 pd.concat([summarise(raw, y) for y in INVENTORY_YEARS], ignore_index=True).assign(run_id=run_id))
+        lh.write("gold", "issue_effects", issue_effects(eli, raw, issues, s3).assign(run_id=run_id))
     eli_lin = pd.DataFrame(dict(derived_key=eli.eli_key, source_key=eli.record_key, stage="gold",
                                 canonical_table="emission_line_items"))
     farm = eli[eli.factor_id.astype(str).str.startswith("farm_footprint:")]

@@ -33,6 +33,27 @@ services:
       - ${CCN_PACKAGE_DIR:-./.tmp/Apetit_SinceAI2026/APETIT_CLIMATE_NATURE_NAVIGATOR_2026/APETIT_CLIMATE_NATURE_NAVIGATOR_2026}:/package:ro
     restart: "no"
 
+  # Parts 2 + 3: copilot API and the web UI (Dashboard, Data review, Ask, Answer sheet, Audit log) on one port.
+  #   docker compose up -d --build web        # http://localhost:${WEB_PORT:-8080}
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    ports:
+      - "${WEB_PORT:-8080}:8000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      CCN_ROOT: /package
+      LAKEHOUSE_DIR: /app/lakehouse
+      COPILOT_FAKE: ${COPILOT_FAKE:-}
+    volumes:
+      - ${CCN_PACKAGE_DIR:-./.tmp/Apetit_SinceAI2026/APETIT_CLIMATE_NATURE_NAVIGATOR_2026/APETIT_CLIMATE_NATURE_NAVIGATOR_2026}:/package:ro
+      - ./lakehouse:/app/lakehouse:ro
+      - web-outputs:/app/outputs
+    restart: unless-stopped
+
   # Part 2 and Part 3 attach to the same lakehouse; enable them when their images exist.
   # agent:
   #   build: ./agent
@@ -53,3 +74,4 @@ services:
 
 volumes:
   lakehouse-data:
+  web-outputs:

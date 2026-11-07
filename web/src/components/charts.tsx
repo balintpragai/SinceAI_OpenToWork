@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import {
   Bar, BarChart, CartesianGrid, Cell, ComposedChart, LabelList, Legend, Line, LineChart, Pie, PieChart,
-  ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis,
+  ResponsiveContainer, Scatter, Tooltip, XAxis, YAxis,
 } from 'recharts'
 import { MessageCircleQuestion, TriangleAlert } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -18,6 +18,7 @@ export type Chart = {
 // Fixed categorical order (dataviz palette); colour follows the series, never its rank.
 const S = ['var(--series-1)', 'var(--series-2)', 'var(--series-3)']
 const WARN = 'var(--status-warning)'
+const PENDING = 'Pending expert review'
 const INK = 'var(--muted-foreground)'
 const GRID = 'var(--border)'
 
@@ -68,24 +69,24 @@ function Plot({ c }: { c: Chart }) {
     case 'kpis':
       return (
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {rows.map((r) => (
               <div key={r.label} className="rounded-md border border-border p-3">
                 <div className="text-xs text-muted-foreground">{r.label}</div>
                 <div className="num mt-1 text-2xl font-medium">
-                  {r.unit === '%' && typeof r.value === 'number' && r.value > 0 ? '+' : ''}{fmt(r.value)}
-                  <span className="ml-1 text-xs font-normal text-muted-foreground">{r.unit}</span>
+                  {/^Change/.test(r.label) && typeof r.value === 'number' && r.value > 0 ? '+' : ''}{fmt(r.value)}
+                  <span className="ml-1 font-sans text-xs font-normal text-muted-foreground">{r.unit}</span>
                 </div>
               </div>
             ))}
           </div>
           {c.trust && (
             <div>
-              <div className="label mb-1.5">How the total was measured</div>
+              <div className="label mb-1.5">Data basis</div>
               <Segments parts={[
                 { label: 'measured', pct: c.trust.measured_pct, color: S[0] },
                 { label: 'estimated', pct: c.trust.estimated_pct, color: S[1] },
-                { label: 'needs review', pct: c.trust.review_pct, color: WARN, icon: true },
+                { label: 'pending review', pct: c.trust.review_pct, color: WARN, icon: true },
               ]} />
             </div>
           )}
@@ -128,14 +129,15 @@ function Plot({ c }: { c: Chart }) {
               <Bar key={s} dataKey={s} stackId="a" fill={S[i]} stroke="var(--card)" strokeWidth={1}
                 radius={i === series.length - 1 ? [4, 4, 0, 0] : 0} isAnimationActive={false} />
             ))}
-            <Scatter dataKey="Previously published" fill="var(--foreground)" shape="circle" isAnimationActive={false} />
+            <Scatter dataKey="As originally published" fill="var(--foreground)" shape="circle" isAnimationActive={false} />
           </ComposedChart>
         </Box>
       )
     case 'hbar':
     case 'lever_bars': {
       const lever = c.kind === 'lever_bars'
-      const data: Row[] = lever ? rows.map((r) => ({ ...r, label: `${r.label} · €${fmt(r.cost)}/t` })) : rows
+      const data: Row[] = lever ? rows.map((r) => ({ ...r, label: `${r.label} · €${fmt(r.cost)}/t` }))
+        : rows.map((r) => (r.volume_t != null ? { ...r, label: `${r.label} · ${fmt(r.volume_t)} t delivered` } : r))
       return (
         <>
           <Box h={hbarHeight(rows.length)}>
@@ -151,8 +153,8 @@ function Plot({ c }: { c: Chart }) {
           </Box>
           {lever && (
             <ul className="mt-2 flex gap-4 text-xs text-muted-foreground">
-              <li className="flex items-center gap-1.5"><span className="size-2 rounded-full" style={{ background: S[2] }} />Saves money</li>
-              <li className="flex items-center gap-1.5"><span className="size-2 rounded-full" style={{ background: S[0] }} />Costs money (€ per tonne shown)</li>
+              <li className="flex items-center gap-1.5"><span className="size-2 rounded-full" style={{ background: S[2] }} />Net saving</li>
+              <li className="flex items-center gap-1.5"><span className="size-2 rounded-full" style={{ background: S[0] }} />Net cost (€ per tonne shown)</li>
             </ul>
           )}
         </>
@@ -163,7 +165,7 @@ function Plot({ c }: { c: Chart }) {
       const byLabel = new Map<string, Row>()
       for (const r of rows) byLabel.set(r.label, { ...(byLabel.get(r.label) ?? { label: r.label }), [r.outcome]: r.value })
       const data = [...byLabel.values()]
-      const color = (o: string) => (o === 'Needs expert review' ? WARN : S[outcomes.indexOf(o)])
+      const color = (o: string) => (o === PENDING ? WARN : S[outcomes.indexOf(o)])
       return (
         <>
           <Box h={hbarHeight(data.length)}>
@@ -177,7 +179,7 @@ function Plot({ c }: { c: Chart }) {
           <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
             {outcomes.map((o) => (
               <li key={o} className="flex items-center gap-1.5">
-                {o === 'Needs expert review' ? <TriangleAlert size={12} style={{ color: WARN }} aria-hidden /> : <span className="size-2 rounded-full" style={{ background: color(o) }} />}
+                {o === PENDING ? <TriangleAlert size={12} style={{ color: WARN }} aria-hidden /> : <span className="size-2 rounded-full" style={{ background: color(o) }} />}
                 {o}
               </li>
             ))}
@@ -238,27 +240,33 @@ function Plot({ c }: { c: Chart }) {
             <YAxis {...axis} tickFormatter={short} width={48} />
             {tip}{legend}
             {series.map((s, i) => (
-              <Line key={s} dataKey={s} stroke={S[i]} strokeWidth={2} strokeDasharray={/target/i.test(s) ? '5 4' : undefined}
+              <Line key={s} dataKey={s} stroke={S[i]} strokeWidth={2} strokeDasharray={/pathway/i.test(s) ? '5 4' : undefined}
                 dot={{ r: 3 }} connectNulls={false} isAnimationActive={false} />
             ))}
           </LineChart>
         </Box>
       )
-    case 'scatter_map': {
-      const soils = [...new Set(rows.map((r) => r.soil))].sort()
+    case 'stacked_100':
       return (
-        <Box h={340}>
-          <ScatterChart margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-            <CartesianGrid stroke={GRID} />
-            <XAxis type="number" dataKey="lon" name="Longitude" domain={['dataMin - 0.1', 'dataMax + 0.1']} {...axis} tickFormatter={(v) => `${(+v).toFixed(1)}°E`} />
-            <YAxis type="number" dataKey="lat" name="Latitude" domain={['dataMin - 0.1', 'dataMax + 0.1']} {...axis} tickFormatter={(v) => `${(+v).toFixed(1)}°N`} width={52} />
-            <ZAxis type="number" dataKey="value" range={[16, 320]} name={c.unit} />
-            {tip}{legend}
-            {soils.map((s) => <Scatter key={s} name={s} data={rows.filter((r) => r.soil === s)} fill={S[['No peat soil', 'Some peat soil', 'Mostly peat soil'].indexOf(s)] ?? S[0]} fillOpacity={0.75} stroke="var(--card)" isAnimationActive={false} />)}
-          </ScatterChart>
-        </Box>
+        <>
+          <Box h={rows.length * 44 + 10}>
+            <BarChart data={rows} layout="vertical" margin={{ top: 0, right: 8, left: 0, bottom: 0 }}>
+              <XAxis type="number" hide domain={[0, 100]} />
+              <YAxis type="category" dataKey="label" {...axis} width={130} interval={0} />
+              <Tooltip formatter={(v) => `${fmt(v)} %`} cursor={{ fill: 'var(--subtle)' }}
+                contentStyle={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 12, color: 'var(--foreground)' }} />
+              {series.map((s, i) => (
+                <Bar key={s} dataKey={s} stackId="a" fill={S[i]} stroke="var(--card)" strokeWidth={2} barSize={26} isAnimationActive={false}>
+                  <LabelList dataKey={s} position="center" formatter={(v: any) => (v >= 15 ? `${fmt(v)} %` : '')} style={{ fill: '#fff', fontSize: 12, fontWeight: 500 }} />
+                </Bar>
+              ))}
+            </BarChart>
+          </Box>
+          <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            {series.map((s, i) => <li key={s} className="flex items-center gap-1.5"><span className="size-2 rounded-full" style={{ background: S[i] }} />{s}</li>)}
+          </ul>
+        </>
       )
-    }
     default:
       return <p className="text-sm text-muted-foreground">This chart type ({c.kind}) is not supported yet.</p>
   }
@@ -291,11 +299,11 @@ export function ChartCard({ chart: c, onAsk }: { chart: Chart; onAsk?: () => voi
       </div>
       {c.note && <p className="mt-3 text-xs text-muted-foreground">{c.note}</p>}
       <div className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 pt-3 text-xs text-muted-foreground">
-        {c.status && <>How sure: <Badge variant={c.status === 'published' ? 'ok' : 'warn'}>{c.status === 'published' ? 'Published' : 'Draft'}</Badge> ·</>}
+        {c.status && <>Data status: <Badge variant={c.status === 'published' ? 'ok' : 'warn'}>{c.status === 'published' ? 'Published' : 'Draft'}</Badge> ·</>}
         <span>Sources: {c.sources.join(' · ')}</span>
         <span className="ml-auto flex gap-1">
-          {!empty && <Button variant="ghost" size="sm" onClick={() => setTable(!table)} aria-pressed={table}>{table ? 'Show chart' : 'Show as table'}</Button>}
-          {onAsk && <Button variant="outline" size="sm" onClick={onAsk}><MessageCircleQuestion /> Ask about this</Button>}
+          {!empty && <Button variant="ghost" size="sm" onClick={() => setTable(!table)} aria-pressed={table}>{table ? 'Hide data' : 'View data'}</Button>}
+          {onAsk && <Button variant="outline" size="sm" onClick={onAsk}><MessageCircleQuestion /> Ask the copilot</Button>}
         </span>
       </div>
     </section>
