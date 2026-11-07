@@ -11,7 +11,7 @@ import httpx
 from google import genai
 from google.genai import types
 
-from . import data, gold, tools
+from . import data, gold, sources, tools
 
 MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash")
 FALLBACKS = ["gemini-3.7-flash", "gemini-flash-latest", "gemini-3.5-flash"]  # used on 503/429 overload
@@ -50,16 +50,28 @@ Hard rules:
    the previous answer. If a follow-up is ambiguous, ask one short clarifying question.
 12. Small talk or thanks: reply briefly in plain text without the answer format.
 
-Answer format (markdown):
-**Answer:** one or two sentences with the number, unit and year.
+Answer format. Your readers are non-technical sustainability managers. Write TWO parts.
+
+PART 1, plain language (this is what the user sees in the chat):
+**<the insight in ONE or at most two SHORT sentences (under 40 words), in bold; put supporting detail in the bullets below, not here: number rounded sensibly, e.g. "about 221,000 t CO₂e" or "89 %", and the year; explain the unit once in plain words, e.g. "t CO₂e = tonnes of carbon dioxide equivalent">**
+**Why it matters:** the so-what, plus one concrete suggested next step.
+**How sure is this:** draft or published, share of estimates and of flagged (uncertain) data, data caveats, in plain words.
+**Sources:** plain source names separated by " · ", taken from SOURCE NAMES, e.g. Purchase records (ERP export) · Methodology guide, section “4. Scope 3”.
+Part 1 must NEVER contain table or column names, SQL, record keys, file paths, tool names, or jargon such as FLAG (say "land-use emissions"), eli, gold, lakehouse, Scope 1/2/3 without a plain-words explanation. Keep Part 1 under about 150 words.
+
+Then a line containing exactly
+---TECHNICAL---
+PART 2, technical (shown in an Evidence panel), markdown:
 **How:** short bullets: tables/filters used, factors, corrections applied.
 **Evidence:** record keys, file + csv rows, and [path#Heading] citations.
 **Review:** one line on what an expert should double-check.
+
+Small talk, thanks, refusals and clarifying questions: plain part only, no ---TECHNICAL--- line.
 """
 
 
 def system_prompt() -> str:
-    head = f"{RULES}\n\nTABLES (name (rows): columns):\n{gold.schema_text()}"
+    head = f"{RULES}\n\nSOURCE NAMES (use these plain names in Part 1 'Sources'; name — file):\n{sources.prompt_section()}\n\nTABLES (name (rows): columns):\n{gold.schema_text()}"
     if gold.has("index"):  # the pipeline's chunk index replaces the in-prompt documents
         return head + "\n\nDOCUMENTS: use the search_docs tool; cite its file and heading_path."
     docs = "\n\n".join(f"===== DOCUMENT: {path} =====\n{text}" for path, text in data.corpus().items())
@@ -78,6 +90,17 @@ def check_citations(text: str) -> list[dict]:
         ok = heads is not None and (any(heading.strip().lower() in h for h in heads) or path.endswith(".csv"))
         out.append({"citation": f"{path}#{heading}", "valid": ok})
     return out
+
+
+MARKER = "---TECHNICAL---"
+
+
+def package(question: str, text: str, trace: list[dict]) -> dict:
+    """Split the model text into the plain answer and the technical part; add citations and plain-language sources."""
+    answer, _, technical = text.partition(MARKER)
+    answer, technical = answer.strip(), technical.strip()
+    return {"question": question, "answer": answer, "technical": technical, "raw": text,
+            "sources": sources.build_sources(trace, technical), "citations": check_citations(answer + "\n" + technical)}
 
 
 class Copilot:
@@ -141,8 +164,7 @@ class Copilot:
         text = r.text or ""
         statuses = {t["result"].get("data_status") for t in self.trace if isinstance(t["result"], dict)} - {None}
         u = r.usage_metadata
-        return {"question": question, "answer": text, "trace": list(self.trace),
-                "citations": check_citations(text), "data_status": sorted(statuses),
+        return {**package(question, text, self.trace), "trace": list(self.trace), "data_status": sorted(statuses),
                 "model": self.model,
                 "tokens": {"prompt": getattr(u, "prompt_token_count", None), "cached": getattr(u, "cached_content_token_count", None),
                            "output": getattr(u, "candidates_token_count", None)}}

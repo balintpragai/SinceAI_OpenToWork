@@ -38,7 +38,7 @@ class _FakeCopilot:
     def ask(self, question: str, fresh: bool = False) -> dict:
         import time
         from copilot import tools
-        from copilot.agent import check_citations
+        from copilot.agent import package
         trace = []
         for i, (fn, kw) in enumerate([(tools.get_inventory, {"year": 2024, "scope": "scope1"}),
                                       (tools.sql, {"query": "SELECT * FROM published_inventory_history WHERE year = 2024"})]):
@@ -48,14 +48,22 @@ class _FakeCopilot:
             trace.append(step)
             self.on_event and self.on_event({"type": "tool_end", **step})
         s1 = trace[0]["result"]["total_tco2e_by_scope"].get("scope1")
-        text = (f"**Answer:** The uncleaned 2024 Scope 1 total is {s1:,.0f} tCO2e; the published figure is 6,251 tCO2e.\n\n"
+        text = (f"**The uncleaned 2024 Scope 1 total is about {s1:,.0f} t CO₂e (tonnes of carbon dioxide equivalent); "
+                "the published figure is about 6,250 t CO₂e.**\n\n"
+                "**Why it matters:** the gap shows the raw records contain errors that the cleaning step corrects. "
+                "Next step: ask the data owner to confirm the refrigerant top-up at the Saku site before reporting.\n\n"
+                "**How sure is this:** low for the uncleaned figure; it comes from data that has not been cleaned yet. "
+                "The published figure is signed off.\n\n"
+                "**Sources:** Previously published inventories · Refrigerant service log · Methodology guide, section “3. Scope 1 and 2”\n\n"
+                "---TECHNICAL---\n"
                 "**How:**\n- `get_inventory(2024, scope1)` on the naive baseline\n- `published_inventory_history` for 2024\n\n"
-                "**Evidence:** refrigerant_service_log line S-SAK:R404A; [docs/METHODOLOGY.md#3. Scope 1 and 2]\n\n"
+                "**Evidence:** refrigerant:RF0001 (refrigerant_service_log row 12); published_inventory_history row 6; "
+                "[docs/METHODOLOGY.md#3. Scope 1 and 2]\n\n"
                 "**Review:** Check the R404A top-up at S-SAK before using this number.\n\nANSWER: 6251\nEVIDENCE: "
                 "published_inventory_history row 6; [docs/METHODOLOGY.md#3. Scope 1 and 2]")
         text = (f"*Demo mode: scripted answer, no model was called. You asked: \"{question.splitlines()[0][:200]}\"*\n\n" + text)
-        return {"question": question, "answer": text, "trace": trace, "citations": check_citations(text),
-                "data_status": ["naive"], "model": self.model, "tokens": {"prompt": 0, "cached": 0, "output": 0}}
+        return {**package(question, text, trace), "trace": trace, "data_status": ["naive"], "model": self.model,
+                "tokens": {"prompt": 0, "cached": 0, "output": 0}}
 
 
 def _copilot(thread_id: str):
@@ -85,9 +93,10 @@ def _stream(cp, prompt: str, fresh: bool, on_final=None, thread_id: str = ""):
     q: queue.Queue = queue.Queue()
 
     def work():
-        cp.on_event = q.put
+        from copilot.tools import clean
+        cp.on_event = lambda ev: q.put(clean(ev))
         try:
-            res = cp.ask(prompt, fresh=fresh)
+            res = clean(cp.ask(prompt, fresh=fresh), cap=None)  # JSON-safe before it is streamed or saved
             if on_final:
                 res = on_final(res)
             q.put({"type": "final", **res})
@@ -174,7 +183,8 @@ def reload():
 
 @app.get("/api/records")
 def records(key: str):
-    res = data.lookup(key)
+    from copilot.tools import clean
+    res = clean(data.lookup(key))
     if "error" in res:
         raise HTTPException(400, res["error"])
     return res
@@ -208,7 +218,7 @@ def run_question(qid: str, force: bool = False):
         raise HTTPException(409, "This answer already has a review decision. Re-run with force=true to replace it.")
 
     def save(res):
-        answer, evidence = parse(res["answer"])
+        answer, evidence = parse(res.get("raw") or res["answer"])
         res = {**res, "answer_id": uuid.uuid4().hex}
         with _store_lock:
             drafts = review.load_drafts()
