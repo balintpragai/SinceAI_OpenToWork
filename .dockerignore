@@ -8,3 +8,8 @@ lakehouse
 **/__pycache__
 **/*.pyc
 .pytest_cache
+env
+**/node_modules
+web/dist
+outputs
+**/.DS_Store

@@ -21,7 +21,10 @@ EMBED_MODEL, EMBED_DIM, EMBED_TASK = "gemini-embedding-001", 768, "RETRIEVAL_QUE
 GOLD = {"line_items": "gold_emission_line_items", "summary": "gold_inventory_summary", "issues": "gold_issues",
         "corrections": "s3_correction_log", "lineage": "gold_lineage", "reviews": "review_decisions",
         "catalog": "gold_catalog", "run_quality": "gold_run_quality", "index": "gold_doc_chunks",
-        "exports": "gold_export_manifest", "rules": "gold_rule_catalog"}
+        "exports": "gold_export_manifest", "rules": "gold_rule_catalog",
+        "line_items_raw": "gold_emission_line_items_as_recorded", "summary_raw": "gold_inventory_summary_as_recorded",
+        "effects": "gold_issue_effects", "status": "s3_issue_status", "manifest": "gold_run_manifest",
+        "files": "raw_file_manifest"}
 
 SQL_TIMEOUT_S = 20
 _lock = threading.Lock()  # one DuckDB connection, serialised (registered objects are per connection)

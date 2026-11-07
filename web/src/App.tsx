@@ -7,6 +7,7 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { AnswerSheet } from '@/components/AnswerSheet'
 import { AuditLog } from '@/components/AuditLog'
 import { Dashboard } from '@/components/Dashboard'
+import { FootprintReview } from '@/components/FootprintReview'
 import { AskView, ChatProvider } from '@/components/Chat'
 import { EvidencePanel } from '@/components/Evidence'
 import { RecordSheet } from '@/components/RecordSheet'
@@ -27,7 +28,7 @@ function useNarrow() {
 function Shell() {
   const { view, evidenceOpen, setEvidenceOpen, status } = useApp()
   const narrow = useNarrow()
-  const showEvidence = view !== 'audit' && view !== 'dashboard'
+  const showEvidence = view !== 'audit' && view !== 'dashboard' && view !== 'review'
   return (
     <div className="flex h-full min-w-0">
       <Sidebar />
@@ -43,7 +44,7 @@ function Shell() {
             <PanelRight /> Evidence
           </Button>
         )}
-        {view === 'dashboard' ? <Dashboard /> : view === 'ask' ? <AskView /> : view === 'sheet' ? <AnswerSheet /> : <AuditLog />}
+        {view === 'dashboard' ? <Dashboard /> : view === 'review' ? <FootprintReview /> : view === 'ask' ? <AskView /> : view === 'sheet' ? <AnswerSheet /> : <AuditLog />}
         </div>
       </main>
       {showEvidence && !narrow && (

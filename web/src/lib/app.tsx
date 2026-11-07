@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { api, friendlyError, stream, type Question, type Stamp, type Status, type TraceStep } from './api'
 
-export type View = 'dashboard' | 'ask' | 'sheet' | 'audit'
+export type View = 'dashboard' | 'review' | 'ask' | 'sheet' | 'audit'
 export type RunState = { qid: string; steps: TraceStep[]; error?: string; done: boolean }
 
 type Ctx = {
