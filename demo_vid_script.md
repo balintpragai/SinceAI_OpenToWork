@@ -13,10 +13,15 @@ See all your sources connected and processed. Aggregates, estimates, decision an
 Questions? Ask your helper co-pilot, to navigate the data and find source documents.
 
 ## Live Demo (35 -95s; Total 60s)
-
+Scalability
+integration
+complience assistence
 
 
 ## Business Impact (95 - 120s; Total 25s)
-
+manhours freed
+0 integration cost
+Executive summeries
+complience 
 
 # Demo video, section matches
