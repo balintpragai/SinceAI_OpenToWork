@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAuiState } from '@assistant-ui/react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Check, ChevronRight, Play, X } from 'lucide-react'
 import { api, fmtTime, recordKeys, type AskResult, type Source, type Stamp } from '@/lib/api'
 import { useApp } from '@/lib/app'
+import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -120,7 +121,19 @@ function ReviewBar({ s }: { s: Subject }) {
 
 export function EvidencePanel() {
   const s = useSubject()
-  const { view, run, runQuestion, openRecord } = useApp()
+  const { view, run, runQuestion, openRecord, evidencePing } = useApp()
+  const sourcesRef = useRef<HTMLDivElement>(null)
+  const [flash, setFlash] = useState(false)
+  useEffect(() => {  // "See evidence" in the chat: bring Sources into view and highlight them briefly
+    if (!evidencePing) return
+    const t0 = setTimeout(() => {
+      const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+      sourcesRef.current?.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' })
+      setFlash(true)
+    }, 60)
+    const t1 = setTimeout(() => setFlash(false), 1600)
+    return () => { clearTimeout(t0); clearTimeout(t1) }
+  }, [evidencePing])
   const live = view === 'sheet' && s?.qid && run?.qid === s.qid ? run : null
   const running = !!live && !live.done
 
@@ -169,6 +182,7 @@ export function EvidencePanel() {
         )}
 
         {sources.length > 0 && (
+          <div ref={sourcesRef} className={cn('scroll-mt-2 transition-colors duration-700', flash && 'bg-primary/10')}>
           <Section title="Sources">
             <ul className="space-y-1.5">
               {sources.map((x, i) => {
@@ -187,6 +201,7 @@ export function EvidencePanel() {
               })}
             </ul>
           </Section>
+          </div>
         )}
 
         {naive && (
