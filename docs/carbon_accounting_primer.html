@@ -1,0 +1,213 @@
+<title>Carbon Accounting Primer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=Public+Sans:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: single reading column, field-notebook feel; spruce accent, peat-amber for warnings */
+:root {
+  --bg: #f7f8f6; --surface: #ffffff; --fg: #1c2420; --muted: #5b6862; --line: #dde3df;
+  --accent: #1f6b52; --accent-soft: #e3efe9; --peat: #9a5b1e; --peat-soft: #f6ebdf;
+  --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --body: "Public Sans", system-ui, -apple-system, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121815; --surface: #1a221e; --fg: #e4ebe7; --muted: #9aa8a1; --line: #2c3832;
+  --accent: #5fc49d; --accent-soft: #1d3329; --peat: #e0a868; --peat-soft: #34281b; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #121815; --surface: #1a221e; --fg: #e4ebe7; --muted: #9aa8a1; --line: #2c3832;
+  --accent: #5fc49d; --accent-soft: #1d3329; --peat: #e0a868; --peat-soft: #34281b; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font: 16px/1.6 var(--body); }
+.wrap { max-width: 760px; margin: 0 auto; padding-block: 48px 80px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 56px; }
+section { display: flex; flex-direction: column; gap: 16px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(2rem, 6vw, 2.9rem); font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 1.55rem; font-weight: 800; }
+h3 { font-size: 1.05rem; font-weight: 600; }
+p { margin: 0; max-width: 65ch; }
+.eyebrow { font: 600 0.75rem/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.lede { font-size: 1.15rem; color: var(--muted); }
+.note { font-size: 0.85rem; color: var(--muted); }
+.mono, code { font-family: var(--mono); font-size: 0.9em; }
+strong { font-weight: 600; }
+
+.formula { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px;
+  font: 600 1.05rem/1.5 var(--mono); display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: baseline; }
+.formula .op { color: var(--muted); font-weight: 400; }
+.formula small { display: block; width: 100%; font: 400 0.85rem var(--body); color: var(--muted); }
+
+.scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+th, td { text-align: left; vertical-align: top; padding: 10px 12px 10px 0; border-bottom: 1px solid var(--line); }
+th { font: 600 0.72rem/1.3 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.bars { display: flex; flex-direction: column; gap: 10px; }
+.bar { display: grid; grid-template-columns: 9.5rem 1fr; gap: 12px; align-items: center; }
+.bar span { font-size: 0.88rem; }
+.track { height: 22px; background: var(--accent-soft); border-radius: 3px; position: relative; }
+.fill { height: 100%; background: var(--accent); border-radius: 3px; min-width: 2px; }
+.track b { position: absolute; left: 8px; top: 0; line-height: 22px; font: 600 0.78rem var(--mono); color: var(--fg); }
+.bar.big .track b { color: var(--surface); }
+@media (max-width: 480px) { .bar { grid-template-columns: 1fr; gap: 4px; } }
+
+.concepts { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+.concept { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px 18px;
+  display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.concept p { font-size: 0.94rem; }
+.concept.peat { background: var(--peat-soft); border-color: transparent; }
+.concept.peat h3 { color: var(--peat); }
+
+.ladder { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+.ladder div { font-size: 0.88rem; display: flex; gap: 8px; }
+.ladder i { font-style: normal; font-family: var(--mono); color: var(--accent); }
+
+.pains { display: flex; flex-direction: column; gap: 0; counter-reset: pain; }
+.pain { display: grid; grid-template-columns: 2.2rem 1fr; gap: 4px 12px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.pain::before { counter-increment: pain; content: counter(pain, decimal-leading-zero); font: 600 0.85rem/1.6 var(--mono); color: var(--muted); }
+.pain div { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.pain p { font-size: 0.95rem; }
+
+.callout { border-left: 3px solid var(--peat); background: var(--peat-soft); padding: 14px 18px; border-radius: 0 6px 6px 0; }
+.callout .big { font: 800 1.6rem/1.2 var(--display); color: var(--peat); }
+
+.tag { display: inline-block; font: 600 0.72rem var(--mono); padding: 2px 6px; border-radius: 3px; background: var(--accent-soft); color: var(--accent); margin: 0 4px 4px 0; white-space: nowrap; }
+
+.pitch { background: var(--accent); color: var(--surface); border-radius: 8px; padding: 24px; display: flex; flex-direction: column; gap: 10px; }
+.pitch .eyebrow { color: var(--surface); opacity: 0.8; }
+.pitch p { font: 600 1.2rem/1.45 var(--display); max-width: none; }
+.pitch .sub { font: 400 0.95rem/1.5 var(--body); opacity: 0.9; }
+
+footer { font-size: 0.82rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+
+<header style="display:flex;flex-direction:column;gap:14px">
+  <div class="eyebrow">Team briefing · Apetit × Since AI 2026</div>
+  <h1>Carbon accounting for a food company, in one read</h1>
+  <p class="lede">What the domain is, where the people doing this work actually struggle, and where an AI tool can help. Written for teammates who are new to it.</p>
+</header>
+
+<section>
+  <div class="eyebrow">Why it exists</div>
+  <h2>Emissions are now reported like money</h2>
+  <p>Three forces push companies to measure greenhouse gases with financial-grade rigour:</p>
+  <table>
+    <tr><th>Force</th><th>What it demands</th></tr>
+    <tr><td><strong>EU regulation</strong> (CSRD / ESRS)</td><td>Large companies publish emissions in their annual report, and an auditor checks them.</td></tr>
+    <tr><td><strong>Customers</strong></td><td>Retailers such as Lidl or S Group ask suppliers for a footprint per product.</td></tr>
+    <tr><td><strong>Commitments</strong></td><td>Apetit promised in Dec 2025 to set <strong>SBTi</strong> targets (science-aligned reduction goals) within 24 months.</td></tr>
+  </table>
+</section>
+
+<section>
+  <div class="eyebrow">How a number is made</div>
+  <h2>Activity × factor, sorted into three scopes</h2>
+  <div class="formula">
+    <span>activity data</span><span class="op">×</span><span>emission factor</span><span class="op">=</span><span>tCO2e</span>
+    <small>Example: 1,000 MWh electricity × 0.08 tCO2e/MWh = 80 tCO2e. The rules come from the GHG Protocol.</small>
+  </div>
+  <div class="scroll"><table>
+    <tr><th>Scope</th><th>What</th><th>Apetit example</th></tr>
+    <tr><td><strong>1 Direct</strong></td><td>Fuel burned on site, refrigerant leaks</td><td>LNG boilers, diesel forklifts</td></tr>
+    <tr><td><strong>2 Energy bought</strong></td><td>Electricity, heat, steam</td><td>Grid power at the plants</td></tr>
+    <tr><td><strong>3 Value chain</strong></td><td>Everything upstream and downstream, in 15 categories</td><td><strong>Cat 1 purchased goods</strong>: peas, potatoes, rapeseed, ingredients</td></tr>
+  </table></div>
+
+  <h3 style="margin-top:12px">Where the tonnes sit (dataset, 2024 dev truth)</h3>
+  <div class="bars" role="img" aria-label="Scope 1 6,400 t, Scope 2 market-based 63 t, Scope 3 category 1 172,085 t">
+    <div class="bar"><span>Scope 3, cat 1</span><div class="track"><div class="fill" style="width:100%"></div><b>172,085 t</b></div></div>
+    <div class="bar"><span>Scope 1</span><div class="track"><div class="fill" style="width:3.72%"></div><b style="left:calc(3.72% + 8px)">6,400 t</b></div></div>
+    <div class="bar"><span>Scope 2 (market)</span><div class="track"><div class="fill" style="width:0.04%"></div><b>63 t</b></div></div>
+  </div>
+  <style>.bars .bar:first-child .track b { color: var(--surface); }</style>
+  <p class="note">Bars drawn to one scale. Other Scope 3 categories (transport, waste, travel and more) come on top of cat 1.</p>
+  <p><strong>The point:</strong> for a food company, over 95 % of emissions sit on farms and in ingredients it does not own. The factories are a rounding error. The real work is estimating what happens on hundreds of farmers' fields and in dozens of suppliers' plants.</p>
+</section>
+
+<section>
+  <div class="eyebrow">Vocabulary</div>
+  <h2>Six concepts you will keep meeting</h2>
+  <div class="concepts">
+    <div class="concept">
+      <h3>Location vs market-based Scope 2</h3>
+      <p>Location-based uses the average grid. Market-based lets you claim green power by holding <strong>guarantees of origin (GoOs)</strong>, certificates saying "this MWh came from wind". Loopholes: wrong vintage year, double counting, claiming more than you used.</p>
+    </div>
+    <div class="concept">
+      <h3>Emission factor quality</h3>
+      <p>The same purchase can be estimated three ways, from crude to precise:</p>
+      <div class="ladder">
+        <div><i>1</i> Spend-based: € spent × kg CO2e per €</div>
+        <div><i>2</i> Average: kg bought × generic factor</div>
+        <div><i>3</i> Supplier PCF: the supplier's measured footprint</div>
+      </div>
+    </div>
+    <div class="concept">
+      <h3>PCF (product carbon footprint)</h3>
+      <p>A supplier's own footprint for one product, often in the PACT JSON format. Usually the best data, often broken: stale reference years, per-tonne values sold as per-kg, land-use change left out.</p>
+    </div>
+    <div class="concept">
+      <h3>FLAG</h3>
+      <p>Forest, Land and Agriculture: emissions from farming itself, such as fertiliser N2O, soil carbon loss and land-use change. SBTi requires food companies to set a separate FLAG target (3.03 %/yr).</p>
+    </div>
+    <div class="concept peat">
+      <h3>Drained peat soils</h3>
+      <p>Drained organic soil oxidises and emits about <strong>29 tCO2 per hectare per year</strong>, against 1–3 t for a normal field. About 6 % of parcels can dominate the farm footprint, yet farmers often report "mineral soil" and the current calculator assumes it.</p>
+    </div>
+    <div class="concept">
+      <h3>Base-year recalculation</h3>
+      <p>Apetit sold its grain trade in 2022 and emissions "fell". That is not a reduction, so the base year is restated without it. Buying Foodhills (Nov 2025) works the other way: its emissions are added to the base.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Pain points</div>
+  <h2>What sustainability teams actually struggle with</h2>
+  <div class="callout">
+    <div class="big">132,163 t vs ~6,400 t</div>
+    <p>The dataset's <span class="mono">draft_report_summary_2025.csv</span> shows a preliminary Scope 1 about 20 times the true value, and a Scope 3 of 71 million t. That is what an unchecked pipeline produces.</p>
+  </div>
+  <div class="pains">
+    <div class="pain"><div><h3>Data lives in a dozen places</h3><p>SAP purchase lines, meter exports, fuel invoices, a technician's refrigerant log, waste contractor PDFs, supplier emails, 680 farmer surveys. A team of 2–5 people stitches it together in Excel for months each spring.</p></div></div>
+    <div class="pain"><div><h3>Errors are common and expensive</h3><p>Kilograms read as tonnes, shifted decimals, euros mixed with kronor, duplicate invoices, missing meter months. One bad line in cat 1 moves the total by thousands of tonnes.</p></div></div>
+    <div class="pain"><div><h3>Not every oddity is an error</h3><p>Credit notes, vessel cargo billed in tonnes, winter energy peaks and ammonia refrigerants are all legitimate. Naive rules over-flag them and waste expert time.</p></div></div>
+    <div class="pain"><div><h3>Auditors need a trail</h3><p>Under CSRD the auditor asks where 172,085 comes from. The team must show rows, factors and every correction with its reason and approver. Spreadsheets cannot do this well.</p></div></div>
+    <div class="pain"><div><h3>Method changes look like reductions</h3><p>Switching a supplier from spend-based to PCF data can cut reported emissions by 30 % with no tonne actually avoided. Separating real change from method, structure and data fixes is hard.</p></div></div>
+    <div class="pain"><div><h3>The rules keep moving</h3><p>SBTi V2 and the GHG Protocol Land Sector standard arrive in 2027, the EU Deforestation Regulation in Dec 2026, ESRS keeps being revised. Someone has to read hundreds of pages each year.</p></div></div>
+    <div class="pain"><div><h3>Supplier and farm data improves slowly</h3><p>You cannot chase everyone. The question is which few suppliers or farms have the biggest size × uncertainty, so better data there changes the total.</p></div></div>
+    <div class="pain"><div><h3>Numbers do not become decisions</h3><p>"We emit 200,000 t" does not tell the CFO what to do on Monday.</p></div></div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Opportunities</div>
+  <h2>Where AI can help, within Tracks A and E</h2>
+  <div class="scroll"><table>
+    <tr><th>Idea</th><th>Pain points</th><th>Why it could win</th></tr>
+    <tr><td><strong>Carbon close</strong>: month-end close for emissions, with checks, correction entries and sign-off</td><td><span class="tag">01</span><span class="tag">02</span><span class="tag">04</span></td><td>Finance teams understand it instantly. Hits usefulness and traceability.</td></tr>
+    <tr><td><strong>Drill-down audit view</strong>: click a number, see formula, factor, rows, corrections</td><td><span class="tag">04</span></td><td>Directly scores the 25 % traceability criterion. Strong demo moment.</td></tr>
+    <tr><td><strong>Context-aware flagging</strong> that knows legitimate oddities and explains each flag with a confidence</td><td><span class="tag">02</span><span class="tag">03</span></td><td>Raises the A1 score and saves expert time.</td></tr>
+    <tr><td><strong>Change bridge</strong>: "−8 % = −2 % real, −5 % method, −1 % divestment, +0.5 % data fixes"</td><td><span class="tag">05</span></td><td>Rare and exactly what SBTi and auditors care about.</td></tr>
+    <tr><td><strong>Data-improvement list</strong>: "get PCFs from these 3 suppliers, verify soil on these 7 farms"</td><td><span class="tag">07</span><span class="tag">08</span></td><td>Something Apetit could act on next week (the 30 % usefulness criterion).</td></tr>
+    <tr><td><strong>Cited regulation copilot</strong> that ties answers to Apetit's own approved numbers</td><td><span class="tag">06</span></td><td>This is Track E. Grounded answers, not guesses.</td></tr>
+    <tr><td><strong>Farmer soil checker</strong>: survey vs soil map vs parcel data, tells the field advisor which farms to visit</td><td><span class="tag">02</span><span class="tag">07</span></td><td>Targets the largest hidden emission source.</td></tr>
+  </table></div>
+</section>
+
+<section>
+  <div class="pitch">
+    <div class="eyebrow">The story we could tell</div>
+    <p>An AI-assisted carbon close: it catches errors, explains them, waits for an expert to approve, and every number is auditable down to the invoice line. A copilot then answers questions from those approved numbers.</p>
+    <p class="sub">The change bridge or the data-improvement list would be the differentiator on top.</p>
+  </div>
+</section>
+
+<footer>All figures come from the hackathon's synthetic dataset (docs and 2024 dev truths), not from Apetit's real reporting.</footer>
+
+</div>
