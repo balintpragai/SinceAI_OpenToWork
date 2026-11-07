@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
+import { Download } from 'lucide-react'
 import { api, fmtTime, type AuditRow } from '@/lib/api'
+import { buttonVariants } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { decisionBadge } from './Evidence'
 import { cn } from '@/lib/utils'
@@ -11,9 +13,12 @@ export function AuditLog() {
   useEffect(() => { api<AuditRow[]>('/api/audit').then(setRows).catch((e) => setErr(e.message)) }, [])
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="border-b border-border px-6 py-3">
-        <h2 className="text-[17px]">Audit log</h2>
-        <p className="text-[13px] text-muted-foreground">Every review decision, newest first. {rows && <span className="num">{rows.length} entries.</span>}</p>
+      <header className="flex items-center gap-4 border-b border-border px-6 py-3">
+        <div className="mr-auto">
+          <h2 className="text-[17px]">Audit log</h2>
+          <p className="text-[13px] text-muted-foreground">Every review decision, newest first. {rows && <span className="num">{rows.length} entries.</span>}</p>
+        </div>
+        <a href="/api/export/audit.xlsx" download className={buttonVariants({ size: 'sm' })}><Download /> Download (Excel)</a>
       </header>
       <div className="min-h-0 flex-1 overflow-auto">
         {err && <p role="alert" className="p-6 text-[13px] text-reject">{err}</p>}

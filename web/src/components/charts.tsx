@@ -3,9 +3,9 @@ import {
   Bar, BarChart, CartesianGrid, Cell, ComposedChart, LabelList, Legend, Line, LineChart, Pie, PieChart,
   ResponsiveContainer, Scatter, Tooltip, XAxis, YAxis,
 } from 'recharts'
-import { MessageCircleQuestion, TriangleAlert } from 'lucide-react'
+import { Download, MessageCircleQuestion, TriangleAlert } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 type Row = Record<string, any>
@@ -303,6 +303,7 @@ export function ChartCard({ chart: c, onAsk }: { chart: Chart; onAsk?: () => voi
         <span>Sources: {c.sources.join(' · ')}</span>
         <span className="ml-auto flex gap-1">
           {!empty && <Button variant="ghost" size="sm" onClick={() => setTable(!table)} aria-pressed={table}>{table ? 'Hide data' : 'View data'}</Button>}
+          {!empty && <a href={`/api/export/chart.xlsx?chart_id=${c.id}${c.year ? `&year=${c.year}` : ''}`} download className={buttonVariants({ variant: 'ghost', size: 'sm' })}><Download /> Download data</a>}
           {onAsk && <Button variant="outline" size="sm" onClick={onAsk}><MessageCircleQuestion /> Ask the copilot</Button>}
         </span>
       </div>

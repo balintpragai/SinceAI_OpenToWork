@@ -322,6 +322,67 @@ def export():
     return {"approved": n, "total": total, "path": data.rel(review.SUBMISSION)}
 
 
+# ---- auditor exports (copilot/export.py): read-only; unapproved content is marked DRAFT --------------------------
+
+_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+
+def _file(content: bytes, name: str) -> Response:
+    return Response(content, media_type=_XLSX, headers={"Content-Disposition": f'attachment; filename="{name}"'})
+
+
+def _answer(thread_id: str, answer_id: str, question_id: str) -> dict:
+    from copilot import export
+    if not question_id and not (review.valid_thread_id(thread_id) and answer_id):
+        raise HTTPException(400, "Give question_id, or thread_id and answer_id.")
+    try:
+        return export.find_answer(thread_id, answer_id, question_id)
+    except (KeyError, StopIteration):
+        raise HTTPException(404, "Answer not found.")
+
+
+@app.get("/api/export/answer")
+def export_answer_summary(thread_id: str = "", answer_id: str = "", question_id: str = ""):
+    """Stamp, hash and run details for the printable (PDF) working paper; the same fields as the workbook's Summary."""
+    from copilot import export
+    from copilot.tools import clean
+    return clean(export.answer_summary(_answer(thread_id, answer_id, question_id)), cap=None)
+
+
+@app.get("/api/export/answer.xlsx")
+def export_answer(thread_id: str = "", answer_id: str = "", question_id: str = ""):
+    from copilot import export
+    a = _answer(thread_id, answer_id, question_id)
+    tag = "approved" if export.is_approved(a["review"]) else "DRAFT"
+    return _file(export.answer_xlsx(a), f"evidence-pack_{question_id or answer_id[:8]}_{tag}.xlsx")
+
+
+@app.get("/api/export/conversation.xlsx")
+def export_conversation(thread_id: str):
+    from copilot import export
+    if not review.valid_thread_id(thread_id):
+        raise HTTPException(400, "Invalid thread id.")
+    try:
+        return _file(export.conversation_xlsx(thread_id), f"conversation_{thread_id[:8]}.xlsx")
+    except KeyError:
+        raise HTTPException(404, "Conversation not found.")
+
+
+@app.get("/api/export/audit.xlsx")
+def export_audit():
+    from copilot import export
+    return _file(export.audit_xlsx(), f"audit-log_{review.now()[:10]}.xlsx")
+
+
+@app.get("/api/export/chart.xlsx")
+def export_chart(chart_id: str, year: int = 2025):
+    from copilot import dashboard as dash, export
+    c = dash.chart(chart_id, year)
+    if "error" in c:
+        raise HTTPException(404, c["error"])
+    return _file(export.chart_xlsx(c), f"{chart_id}_{year}.xlsx")
+
+
 # The built web UI (web/dist, e.g. in the Docker image). Mounted last so every /api route above takes precedence.
 _WEB_DIST = Path(__file__).parent / "web" / "dist"
 if _WEB_DIST.is_dir():

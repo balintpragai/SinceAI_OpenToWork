@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from . import data, gold, tools
+from . import data, gold, sources as src_names, tools
 
 PLAIN = {  # category -> GHG Protocol name
     "cat01_purchased_goods": "Purchased goods", "cat01_purchased_services": "Purchased services",
@@ -30,10 +30,10 @@ GROUPS = {"scope1": "Scope 1 – Direct operations", "scope2_market": "Scope 2 �
 SHORT = {"scope1": "Scope 1 (direct operations)", "scope2_market": "Scope 2 (purchased energy)", "scope3": "Scope 3 (value chain)"}
 ACTION = {"correct": "Corrected automatically", "method": "Corrected automatically", "estimate": "Estimated",
           "flag": "Pending expert review"}
-SRC = {"li": "Emission calculation (data pipeline)", "issues": "Data-quality findings (data pipeline)",
-       "sales": "Sales volumes", "history": "Previously published inventories", "farms": "Farm footprints (data pipeline)",
-       "draft": "Draft 2025 report summary", "levers": "Decarbonisation options", "scen": "Transition scenarios",
-       "mat": "Materials list", "sup": "Supplier list"}
+SRC = {"li": "gold_emission_line_items", "issues": "gold_issues", "sales": "s4_sales",
+       "history": "s3_published_inventory_history", "farms": "gold_farm_footprints", "draft": "s3_draft_report_summary",
+       "levers": "s3_decarbonisation_levers", "scen": "s3_transition_scenarios", "mat": "gold_dim_materials",
+       "sup": "gold_dim_suppliers"}  # chart source key -> lakehouse table
 BASE_YEAR, SBTI_RATE = 2021, 4.2  # approved 2026-11-07: first pipeline year; 1.5 °C linear rate for Scope 1+2
 
 
@@ -59,7 +59,8 @@ def _big(x: float) -> str:
 def _out(id, title, kind, rows, sources, year=None, unit="t CO₂e", **extra) -> dict:
     status = tools.signoff_status(year).split(" (")[0] if year else None
     return {"id": id, "title": title, "kind": kind, "unit": unit, "rows": rows, "year": year,
-            "status": status, "sources": [SRC[s] for s in sources], **extra}
+            "status": status, "sources": [src_names.table_label(SRC[s]) for s in sources],
+            "tables": [SRC[s] for s in sources], **extra}
 
 
 def _trust(d: pd.DataFrame) -> dict:

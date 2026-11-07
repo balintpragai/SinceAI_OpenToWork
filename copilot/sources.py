@@ -180,10 +180,8 @@ def build_sources(trace: list[dict], technical_text: str = "", cap: int = 8) -> 
                     else:
                         add(src, None, detail)
         elif tool == "show_chart":
-            seen = {x["label"] for x in found.values()}
-            for label in r.get("sources", []):
-                if label not in seen:
-                    add(label, label, f"{r.get('year') or ''}")
+            for t in r.get("tables", []):
+                add(table_file(t), table_label(t), f"{r.get('year') or ''}")
         elif tool == "search_docs":
             for c in r.get("chunks", []):
                 docs.append((c.get("file"), c.get("heading_path")))

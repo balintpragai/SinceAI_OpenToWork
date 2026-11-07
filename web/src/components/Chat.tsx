@@ -200,6 +200,7 @@ function ErrorText() {
 
 function Composer() {
   const newConv = useNewConversation()
+  const { activeId } = useConversations()
   return (
     <div className="border-t border-border bg-background px-6 py-3">
       <ComposerPrimitive.Root className="mx-auto flex max-w-3xl items-end gap-2 rounded-md border border-border bg-card p-1.5 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/30">
@@ -216,7 +217,10 @@ function Composer() {
       </ComposerPrimitive.Root>
       <div className="mx-auto mt-1.5 flex max-w-3xl items-center justify-between text-xs text-muted-foreground">
         <span>Enter to send, Shift+Enter for a new line.</span>
-        <button type="button" onClick={newConv} className="rounded-sm underline underline-offset-2 hover:text-foreground">New conversation</button>
+        <span className="flex gap-3">
+          {activeId && <a href={`/api/export/conversation.xlsx?thread_id=${activeId}`} download className="rounded-sm underline underline-offset-2 hover:text-foreground">Export conversation (Excel)</a>}
+          <button type="button" onClick={newConv} className="rounded-sm underline underline-offset-2 hover:text-foreground">New conversation</button>
+        </span>
       </div>
     </div>
   )

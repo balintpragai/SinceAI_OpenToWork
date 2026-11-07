@@ -2,16 +2,17 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAuiState } from '@assistant-ui/react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { Check, ChevronRight, Play, X } from 'lucide-react'
+import { Check, ChevronRight, Download, Play, Printer, X } from 'lucide-react'
 import { api, fmtTime, recordKeys, type AskResult, type Source, type Stamp } from '@/lib/api'
 import { useApp } from '@/lib/app'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { finalOf } from './Chat'
 import { ToolStep } from './ToolStep'
+import { printAnswer } from './PrintAnswer'
 
 export const decisionBadge = (s: string) =>
   s === 'approved' ? <Badge variant="ok">Approved</Badge>
@@ -119,6 +120,24 @@ function ReviewBar({ s }: { s: Subject }) {
   )
 }
 
+function ExportBar({ s }: { s: Subject }) {
+  const params = s.qid ? `question_id=${encodeURIComponent(s.qid)}`
+    : s.result?.thread_id && s.answerId ? `thread_id=${encodeURIComponent(s.result.thread_id)}&answer_id=${encodeURIComponent(s.answerId)}` : ''
+  if (!params || !s.result) return null
+  const approved = s.review?.status === 'approved' || s.review?.status === 'edited'
+  return (
+    <Section title="Export for audit">
+      <div className="flex flex-wrap gap-2">
+        <a href={`/api/export/answer.xlsx?${params}`} download className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+          <Download /> {approved ? 'Export evidence pack (Excel)' : 'Export draft (Excel)'}
+        </a>
+        <Button size="sm" variant="outline" onClick={() => printAnswer(params, s.result)}><Printer /> Print / Save as PDF</Button>
+      </div>
+      {!approved && <p className="mt-1.5 text-xs text-muted-foreground">Exports are marked DRAFT. Approve first for an approved copy.</p>}
+    </Section>
+  )
+}
+
 export function EvidencePanel() {
   const s = useSubject()
   const { view, run, runQuestion, openRecord, evidencePing } = useApp()
@@ -209,6 +228,7 @@ export function EvidencePanel() {
             Built on uncleaned data. Numbers may be wrong until the pipeline outputs land.
           </div>
         )}
+        <ExportBar s={s} />
         <details className="group border-b border-border px-4 py-3">
           <summary className="label flex cursor-pointer list-none items-center gap-1 [&::-webkit-details-marker]:hidden">
             <ChevronRight size={12} className="transition-transform group-open:rotate-90" /> Technical details
