@@ -15,14 +15,14 @@ A 1 dashboard solution!
 See all your sources connected and processed. Aggregates, estimates, decision and change history.
 Questions? Ask your helper co-pilot, to navigate the data and find source documents.
 
-What they lack is one ground truth. We offer one single truth in our single dashboard solution! 
-See all your sources connected and processed. Aggregates, estimates, decision and change history.
-Questions? Ask your helper co-pilot, to navigate the data and find source documents.
+croissant helps a business read between the lines and find actionable insights. We've built a single dashboard interface that gives you all the information you could ask for at a glance. 
+See all your sources and how they connect. Aggregates, estimates, and decision history.
+Questions? Ask your helper co-pilot, to navigate the data, create reports and find source documents.
 
 ## Live Demo (35 -95s; Total 60s)
-Scalability
-integration
-complience assistence
+Scalability - our harness supports everything from a frontier model to a locally hosted one, and our data lake + pipeline can store and throughput huge amounts of data
+integration - built on the same tech stack as apetit's, integration is one prompt away
+compliance assistance - Export every output for easy distribution among teams, and rest easy knowing every decision is tracked in the audit log.
 
 
 ## Business Impact (95 - 120s; Total 25s)
