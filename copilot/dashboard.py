@@ -296,8 +296,6 @@ SECTIONS = [  # executive reading order
      "charts": ["kpis", "scope_split", "trend"]},
     {"id": "sources", "title": "Emission sources", "intro": "Where emissions arise, by GHG Protocol category and supplier.",
      "charts": ["top_categories", "land_use", "top_materials"]},
-    {"id": "quality", "title": "Data quality & assurance", "intro": "How source data was validated and what remains for expert review.",
-     "charts": ["corrections", "issues_by_type", "published_vs_checked"]},
     {"id": "pathway", "title": "Decarbonisation pathway", "intro": "Progress against the 1.5 °C pathway, reduction measures and carbon-price exposure.",
      "charts": ["target_path", "levers", "carbon_cost"]},
     {"id": "agriculture", "title": "Agricultural supply chain", "intro": "Emissions from contract farms growing crops for the company.",
@@ -314,4 +312,5 @@ def chart(chart_id: str, year: int = 2025) -> dict:
 
 
 def dashboard(year: int = 2025) -> dict:
-    return {"year": year, "sections": SECTIONS, "charts": {k: chart(k, year) for k in CHARTS}}
+    # corrections, issues_by_type, published_vs_checked stay copilot-only: data quality lives on the Data review page
+    return {"year": year, "sections": SECTIONS, "charts": {k: chart(k, year) for sec in SECTIONS for k in sec["charts"]}}

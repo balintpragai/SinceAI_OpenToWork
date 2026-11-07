@@ -36,12 +36,13 @@ A visual dashboard for non-technical readers (sustainability managers, executive
 **Sections**, in executive reading order:
 1. **Executive summary:** kpis, scope_split, trend.
 2. **Emission sources:** top_categories, land_use, top_materials.
-3. **Data quality & assurance:** corrections, issues_by_type, published_vs_checked.
-4. **Decarbonisation pathway:** target_path, levers (labelled as design estimates), carbon_cost (3 scenarios).
-5. **Agricultural supply chain:** farm_summary, farm_sources (4 source groups), farm_concentration (peat-soil farms' share of farms vs share of emissions), crop_intensity (with volume delivered).
+3. **Decarbonisation pathway:** target_path, levers (labelled as design estimates), carbon_cost (3 scenarios).
+4. **Agricultural supply chain:** farm_summary, farm_sources (4 source groups), farm_concentration (peat-soil farms' share of farms vs share of emissions), crop_intensity (with volume delivered).
    - Replaces the earlier "Farm to freezer" page and its unlabelled farm scatter chart.
 
 **"Ask the copilot"** on any chart starts a new conversation.
+
+**Data quality moved to the Data review page** (PR #4). corrections, issues_by_type and published_vs_checked are no longer on the dashboard; the copilot can still show them with `show_chart`.
 
 ## Findings during the build
 

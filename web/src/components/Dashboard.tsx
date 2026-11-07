@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils'
 type Section = { id: string; title: string; intro: string; charts: string[] }
 type Payload = { year: number; sections: Section[]; charts: Record<string, Chart> }
 const YEARS = [2025, 2024, 2023, 2022, 2021]
-const WIDE = new Set(['kpis', 'farm_summary', 'corrections', 'issues_by_type', 'levers'])
+const WIDE = new Set(['kpis', 'farm_summary', 'levers'])
 
 export function Dashboard() {
   const { setView } = useApp()

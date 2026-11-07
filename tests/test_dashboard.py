@@ -18,7 +18,7 @@ def _summary_total(year: int) -> float:
 def test_every_chart_renders_and_is_json(year):
     d = D.dashboard(year)
     assert set(d["charts"]) == {c for sec in d["sections"] for c in sec["charts"]}
-    for c in d["charts"].values():
+    for c in [*d["charts"].values(), *(D.chart(k, year) for k in D.CHARTS)]:
         assert "error" not in c and c["title"] and c["kind"], c
     json.dumps(tools.clean(d, cap=None), allow_nan=False)
 
